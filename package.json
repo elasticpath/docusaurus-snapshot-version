@@ -1,0 +1,5 @@
+{
+	"name": "snapshot-version",
+	"descriotion": "A workaround to do snapshot type versioningin Docusaurus 1.x.x",
+	"version": "0.0.1"
+}
