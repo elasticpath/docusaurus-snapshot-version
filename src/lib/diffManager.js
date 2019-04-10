@@ -16,12 +16,12 @@ const writeFile = util.promisify(fs.writeFile);
 const unlinkFile = util.promisify(fs.unlink);
 
 
-exports.generateFileDiff = (docsPath) => {
+exports.generateFileDiff = async (docsPath) => {
     let files = glob.sync(path.join(docsPath, MARKDOWN_PATTERN));
     return Promise.all(files.map(addDiff));
 }
 
-exports.cleanUpFileDiff = (docsPath, version = "") => {
+exports.cleanUpFileDiff = async (docsPath, version = "") => {
     let pathToDocs = (version === "") ? path.join(docsPath, MARKDOWN_PATTERN) : 
         path.join(docsPath, `version-${version}`, MARKDOWN_PATTERN); 
     let files = glob.sync(pathToDocs); 
@@ -37,7 +37,7 @@ exports.generateSidebarDiff = async (siteDir) => {
     return writeFile(pathToSidebar, JSON.stringify(sidebar, null, 2), 'utf8');
 }
 
-exports.cleanUpSidebarDiff = (siteDir, version = "") => {
+exports.cleanUpSidebarDiff = async (siteDir, version = "") => {
     let pathToSidebar;
     let toBeDeletedProperty;
     if (version === "") {
