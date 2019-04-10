@@ -2,6 +2,7 @@ const fs = require('fs');
 const shell = require('shelljs');
 const diffManager = require('./diffManager');
 const siteUtils = require('./siteUtils');
+const assetCopier = require('./assetCopier');
 
 exports.create = (version, siteDir) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
@@ -31,6 +32,7 @@ async function createVersion(version, siteProps) {
 	diffManager.cleanUpFileDiff(siteProps.paths.versionedDocs, version);
 	diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir);
 	diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version);
+	assetCopier.copyAssets(siteProps.paths.docs, siteProps.paths.versionedDocs, version);
 }
 
 function runDocusaurusVersionCommand(version, siteDir) {
