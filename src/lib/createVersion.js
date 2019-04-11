@@ -34,7 +34,7 @@ async function createVersion(version, siteProps) {
 		diffManager.cleanUpFileDiff(siteProps.paths.versionedDocs, version),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version),
-		assetCopier.copyAssets(siteProps.paths.docs, siteProps.paths.versionedDocs, version)
+		assetCopier.copyAssets(siteProps.paths.docs, version)
 	]);
 	assetLinker.linkAssets(siteProps.paths.versionedDocs, version);
 }

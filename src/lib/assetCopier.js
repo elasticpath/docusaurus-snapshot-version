@@ -1,9 +1,29 @@
-const fsExtra = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
-exports.copyAssets = async (docsDir, versionedDocsDir, version) => {
+const readDirectory = util.promisify(fs.readdir);
+const copyFile = util.promisify(fs.copyFile);
+const lstatFile = util.promisify(fs.lstat);
+
+exports.copyAssets = async (docsDir, version) => {
     let pathToAssets = path.join(docsDir, "assets");
-    let pathToVersionedAssets = path.join(versionedDocsDir, `version-${version}`, "assets");
-    fsExtra.mkdirSync(pathToVersionedAssets);
-    return fsExtra.copy(pathToAssets, pathToVersionedAssets);
+    if (!fs.existsSync(pathToAssets)) {
+        return Promise.resolve();
+    }
+    let pathToVersionedAssets = path.join(pathToAssets, `version-${version}`);
+    fs.mkdirSync(pathToVersionedAssets);
+    let fileNames = await readDirectory(pathToAssets);
+    return Promise.all(fileNames.map((fileName) => copyAssetFile(fileName, pathToAssets, pathToVersionedAssets)));
+};
+
+async function copyAssetFile(fileName, pathToAssets, pathToVersionedAssets) {
+    let pathToSourceFile = path.join(pathToAssets, fileName);
+    let sourceFileStat = await lstatFile(pathToSourceFile);
+    if (sourceFileStat.isFile()) {
+        let pathToDestFile = path.join(pathToVersionedAssets, fileName);
+        return copyFile(pathToSourceFile, pathToDestFile, fs.constants.COPYFILE_EXCL);
+    } else {
+        return Promise.resolve();
+    }
 }

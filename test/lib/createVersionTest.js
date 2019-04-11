@@ -60,7 +60,7 @@ describe('createVersion does preliminary checks and calls diffManager',
                 sinon.assert.calledOnce(shell.exec);
 
                 sinon.assert.calledOnce(assetCopier.copyAssets);
-                sinon.assert.calledWithExactly(assetCopier.copyAssets, siteProps.paths.docs, siteProps.paths.versionedDocs, "1.2.3");
+                sinon.assert.calledWithExactly(assetCopier.copyAssets, siteProps.paths.docs, "1.2.3");
 
                 sinon.assert.calledOnce(assetLinker.linkAssets);
                 sinon.assert.calledWithExactly(assetLinker.linkAssets,
