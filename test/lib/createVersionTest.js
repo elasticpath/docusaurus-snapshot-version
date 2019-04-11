@@ -9,6 +9,7 @@ const createVersion = require('../../src/lib/createVersion.js');
 const diffManager = require('../../src/lib/diffManager.js');
 const siteUtils = require('../../src/lib/siteUtils.js');
 const assetCopier = require('../../src/lib/assetCopier.js');
+const assetLinker = require('../../src/lib/assetLinker.js');
 
 const SITE_DIR = ".";
 
@@ -21,6 +22,7 @@ describe('createVersion does preliminary checks and calls diffManager',
             sinon.stub(siteUtils, 'loadSiteProperties').returns(siteProps);
             sinon.stub(diffManager);
             sinon.stub(assetCopier);
+            sinon.stub(assetLinker);
             sinon.stub(shell);
             sinon.stub(fs, 'existsSync').returns(true);
         }) 
@@ -59,6 +61,10 @@ describe('createVersion does preliminary checks and calls diffManager',
 
                 sinon.assert.calledOnce(assetCopier.copyAssets);
                 sinon.assert.calledWithExactly(assetCopier.copyAssets, siteProps.paths.docs, siteProps.paths.versionedDocs, "1.2.3");
+
+                sinon.assert.calledOnce(assetLinker.linkAssets);
+                sinon.assert.calledWithExactly(assetLinker.linkAssets,
+                    siteProps.paths.versionedDocs, "1.2.3");
         });
 
         it("Throws error due to missing version.js file", function() {
@@ -90,6 +96,8 @@ describe('createVersion does preliminary checks and calls diffManager',
             sinon.assert.calledWithExactly(siteUtils.loadSiteProperties, SITE_DIR);
             sinon.assert.notCalled(diffManager.generateFileDiff);
             sinon.assert.notCalled(diffManager.cleanUpFileDiff);
+            sinon.assert.notCalled(assetCopier.copyAssets);
+            sinon.assert.notCalled(assetLinker.linkAssets);
             sinon.assert.notCalled(shell.cd);
             sinon.assert.notCalled(shell.exec);
         }
