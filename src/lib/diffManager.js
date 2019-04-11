@@ -17,18 +17,27 @@ const unlinkFile = util.promisify(fs.unlink);
 
 
 exports.generateFileDiff = async (docsPath) => {
+    console.info("Generating diff in markdown files...");
     let files = glob.sync(path.join(docsPath, MARKDOWN_PATTERN));
     return Promise.all(files.map(addDiff));
 }
 
 exports.cleanUpFileDiff = async (docsPath, version = "") => {
-    let pathToDocs = (version === "") ? path.join(docsPath, MARKDOWN_PATTERN) : 
-        path.join(docsPath, `version-${version}`, MARKDOWN_PATTERN); 
+    let pathToDocs;
+    if (version === "") {
+        pathToDocs = path.join(docsPath, MARKDOWN_PATTERN);
+        console.info("Cleaning up diff from markdown files...");
+    } else {
+        pathToDocs = path.join(docsPath, `version-${version}`, 
+            MARKDOWN_PATTERN);
+        console.info("Cleaning up diff from versioned markdown files...");
+    }
     let files = glob.sync(pathToDocs); 
     return Promise.all(files.map(cleanUpDiff));
 }
 
 exports.generateSidebarDiff = async (siteDir) => {
+    console.info("Generating diff in sidebars.json...");
     let pathToSidebar = path.join(siteDir, "sidebars.json");
     let sidebarRawContent = await readFile(pathToSidebar, 'utf8');
     let sidebar = JSON.parse(sidebarRawContent);
@@ -43,9 +52,11 @@ exports.cleanUpSidebarDiff = async (siteDir, version = "") => {
     if (version === "") {
         pathToSidebar = path.join(siteDir, "sidebars.json");
         toBeDeletedProperty = "toBeDeleted";
+        console.info("Cleaning up diff from sidebars...");
     } else {
         pathToSidebar = path.join(siteDir, "versioned_sidebars", `version-${version}-sidebars.json`);
         toBeDeletedProperty = `version-${version}-toBeDeleted`;
+        console.info("Cleaning up diff from versioned sidebars...");
     }
     return deleteFromSidebar(pathToSidebar, toBeDeletedProperty);
 }

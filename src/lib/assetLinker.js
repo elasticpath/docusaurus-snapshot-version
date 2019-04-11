@@ -9,6 +9,7 @@ const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
 
 exports.linkAssets = (versionedDocsDir, version) => {
+    console.info("Linking versioned asset in versioned markdown files...");
     let pathToVDocs = path.join(versionedDocsDir, `version-${version}`, MARKDOWN_PATTERN);
     let files = glob.sync(pathToVDocs);
     return Promise.all(files.map((file) => linkAssetsInFile(file, version)));

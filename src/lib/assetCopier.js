@@ -7,6 +7,7 @@ const copyFile = util.promisify(fs.copyFile);
 const lstatFile = util.promisify(fs.lstat);
 
 exports.copyAssets = async (docsDir, version) => {
+    console.info("Copying assets for the new version...");
     let pathToAssets = path.join(docsDir, "assets");
     if (!fs.existsSync(pathToAssets)) {
         return Promise.resolve();
