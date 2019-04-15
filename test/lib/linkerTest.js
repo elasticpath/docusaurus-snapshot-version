@@ -2,7 +2,7 @@ const mockfs = require('mock-fs');
 const assert = require('chai').assert;
 const path = require('path');
 const fs = require('fs');
-const assetLinker = require('../../src/lib/assetLinker.js');
+const linker = require('../../src/lib/linker.js');
 
 describe("Link versioned assets in versioned docs", function() {
 
@@ -12,7 +12,7 @@ describe("Link versioned assets in versioned docs", function() {
 
     it("Should replace asset links in versioned docs", async function() {
         mockUnlinkedAssetMarkdownFiles();
-        await assetLinker.linkAssets(path.join(process.cwd(), "versioned_docs"), "1.4.5");
+        await linker.linkAssets(path.join(process.cwd(), "versioned_docs"), "1.4.5");
         let expectation = createLinkedMarkdownContent();
         let actual = readLinkedMarkdownFiles();
         assert.strictEqual(actual.docsOverview, expectation.docsOverview);
@@ -30,7 +30,7 @@ describe("Link versioned assets in versioned docs", function() {
             }
         })
         let versionedDocsDir = path.join(process.cwd(), "versioned_docs");
-        await assetLinker.linkAssets(versionedDocsDir, "1.4.5");
+        await linker.linkAssets(versionedDocsDir, "1.4.5");
         let expectation = "This file do not have assets";
         let actual = fs.readFileSync(path.join(versionedDocsDir, "version-1.4.5", "Overview.md"), 'utf8');
         assert.strictEqual(actual, expectation);
@@ -45,7 +45,7 @@ describe("Link versioned assets in versioned docs", function() {
             }
         })
         let versionedDocsDir = path.join(process.cwd(), "versioned_docs");
-        await assetLinker.linkAssets(versionedDocsDir, "1.4.5");
+        await linker.linkAssets(versionedDocsDir, "1.4.5");
         let expectation = "This file is not markdown ![Do not replace](doNotReplace.jpeg)";
         let actual = fs.readFileSync(path.join(versionedDocsDir, "version-1.4.5", "Overview.txt"), 'utf8');
         assert.strictEqual(actual, expectation);
