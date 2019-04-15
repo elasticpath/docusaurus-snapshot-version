@@ -37,7 +37,7 @@ async function createVersion(version, siteProps) {
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version),
 		assetCopier.copyAssets(siteProps.paths.docs, version)
 	]);
-	return linker.linkAssets(siteProps.paths.versionedDocs, version);
+	return linker.linkAssetsAndMarkdownFiles(siteProps.paths.versionedDocs, version);
 }
 
 function runDocusaurusVersionCommand(version, siteDir) {
