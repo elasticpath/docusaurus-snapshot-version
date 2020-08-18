@@ -62,8 +62,8 @@ describe('createVersion does preliminary checks and calls diffManager',
                 sinon.assert.calledOnce(assetCopier.copyAssets);
                 sinon.assert.calledWithExactly(assetCopier.copyAssets, siteProps.paths.docs, "1.2.3");
 
-                sinon.assert.calledOnce(linker.linkAssetsAndMarkdownFiles);
-                sinon.assert.calledWithExactly(linker.linkAssetsAndMarkdownFiles,
+                sinon.assert.calledOnce(linker.linkAssetsInMarkdownFiles);
+                sinon.assert.calledWithExactly(linker.linkAssetsInMarkdownFiles,
                     siteProps.paths.versionedDocs, "1.2.3");
         });
 
@@ -97,7 +97,7 @@ describe('createVersion does preliminary checks and calls diffManager',
             sinon.assert.notCalled(diffManager.generateFileDiff);
             sinon.assert.notCalled(diffManager.cleanUpFileDiff);
             sinon.assert.notCalled(assetCopier.copyAssets);
-            sinon.assert.notCalled(linker.linkAssetsAndMarkdownFiles);
+            sinon.assert.notCalled(linker.linkAssetsInMarkdownFiles);
             sinon.assert.notCalled(shell.cd);
             sinon.assert.notCalled(shell.exec);
         }
