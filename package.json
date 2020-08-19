@@ -3,7 +3,7 @@
 	"descriotion": "A workaround to do snapshot type versioningin Docusaurus 1.x.x",
 	"version": "0.0.1",
 	"scripts": {
-		"test": "mocha"
+		"test": "mocha test/*"
 	},
 	"main": "./lib/createVersion.js",
 	"bin": {
