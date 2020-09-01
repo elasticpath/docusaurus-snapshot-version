@@ -1,7 +1,7 @@
 {
 	"name": "docusaurus-snapshot-version",
 	"descriotion": "A workaround to do snapshot type versioning in Docusaurus 1.x.x",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"scripts": {
 		"test": "mocha test/*"
 	},
@@ -25,3 +25,4 @@
 	},
 	"license": "GPL-3.0"
 }
+
