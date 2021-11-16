@@ -52,16 +52,6 @@ async function removeFilesInDirectory(from, exclude) {
     }
 }
 
-async function updateDocsPaths(version, assetTypes, basedVersioned) {
-    let fileContent = await fs.readFile("versions.json", "utf8");
-    let jsonContent = JSON.parse(fileContent);
-    let objectSize =  jsonContent.length;
-
-    if (objectSize === 1) {
-
-    }
-}
-
 /*
   Recursive function to find all files in the current directory and
   replace the links in the file.
