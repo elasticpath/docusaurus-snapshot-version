@@ -16,7 +16,7 @@ function throwIfInvalidCommand(version, siteProps) {
 		throw new Error("version.js file is missing");
 	}
 	if (typeof version === undefined) {
-		throw new TypeError("Verion not specified");
+		throw new TypeError("Version not specified");
 	}
 	if (version.includes('/')) {
 		throw new TypeError("Invalid version format. (/) character is not allowed in version");
