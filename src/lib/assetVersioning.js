@@ -6,25 +6,25 @@ function main() {
     let args = parseArguments(process.argv.slice(2));
     let version = args['version'];
     let assetTypes = [].concat(args['assetType']);
-    assetTypes.forEach(assetType => {
-        moveAssetFiles(version, assetType)
-            .catch(err => console.log(err));
-    });
+    moveAssetFiles(version, assetTypes)
+        .catch(err => console.log(err));
     updateVersionedDocsPaths(version, assetTypes)
         .catch(err => console.log(err));
 }
 
-async function moveAssetFiles(version, assetType) {
+async function moveAssetFiles(version, assetTypes) {
     let fileContent = await fs.readFile("versions.json", "utf8");
     let jsonContent = JSON.parse(fileContent);
     let objectSize =  jsonContent.length;
     let excludeFromRemoval = ["next"];
 
-    if (objectSize === 1) {
-        await copyDirectory(`static/${assetType}/`, `static/${assetType}/next`);
-        await removeFilesInDirectory(`static/${assetType}/`, excludeFromRemoval);
+    for (const assetType of assetTypes) {
+        if (objectSize === 1) {
+            await copyDirectory(`static/${assetType}/`, `static/${assetType}/next`);
+            await removeFilesInDirectory(`static/${assetType}/`, excludeFromRemoval);
+        }
+        await copyDirectory(`static/${assetType}/next`, `static/${assetType}/${version}`)
     }
-    await copyDirectory(`static/${assetType}/next`, `static/${assetType}/${version}`)
 }
 
 async function copyDirectory(from, to) {
@@ -49,6 +49,16 @@ async function removeFilesInDirectory(from, exclude) {
         if (!exclude.includes(file.name)) {
             await fs.rm(path.join(from, file.name), {recursive: true});
         }
+    }
+}
+
+async function updateDocsPaths(version, assetTypes, basedVersioned) {
+    let fileContent = await fs.readFile("versions.json", "utf8");
+    let jsonContent = JSON.parse(fileContent);
+    let objectSize =  jsonContent.length;
+
+    if (objectSize === 1) {
+
     }
 }
 
