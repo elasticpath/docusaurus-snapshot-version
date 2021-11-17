@@ -5,7 +5,7 @@ const siteUtils = require('./siteUtils');
 const assetCopier = require('./assetCopier');
 const linker = require('./linker');
 
-exports.create = (version, siteDir) => {
+exports.create = (version, siteDir, assetType) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
 	throwIfInvalidCommand(version, siteProps);
 	return createVersion(version, siteProps);
