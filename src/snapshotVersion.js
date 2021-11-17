@@ -15,7 +15,7 @@ module.exports = (argsParser = process.argv) => {
             if (!assetType) {
                 assetType = [];
             }
-            createVersion(version, siteDir, assetType);
+            createVersion.create(version, siteDir, assetType);
         });
     program.parse(argsParser);
 }
