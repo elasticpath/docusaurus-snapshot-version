@@ -1,16 +1,15 @@
 const fs = require('fs').promises;
 const path = require('path');
-const parseArguments = require('minimist');
 
-function main() {
-    let args = parseArguments(process.argv.slice(2));
-    let version = args['version'];
-    let assetTypes = [].concat(args['assetType']);
-    moveAssetFiles(version, assetTypes)
-        .catch(err => console.log(err));
-    updateVersionedDocsPaths(version, assetTypes)
-        .catch(err => console.log(err));
-}
+// function main() {
+//     let args = parseArguments(process.argv.slice(2));
+//     let version = args['version'];
+//     let assetTypes = [].concat(args['assetType']);
+//     moveAssetFiles(version, assetTypes)
+//         .catch(err => console.log(err));
+//     updateVersionedDocsPaths(version, assetTypes)
+//         .catch(err => console.log(err));
+// }
 
 async function moveAssetFiles(version, assetTypes) {
     let fileContent = await fs.readFile("versions.json", "utf8");
@@ -56,7 +55,7 @@ async function removeFilesInDirectory(from, exclude) {
   Recursive function to find all files in the current directory and
   replace the links in the file.
  */
-async function updateVersionedDocsPaths(version, assetTypes, subDirName="") {
+export async function updateVersionedDocsPaths(version, assetTypes, subDirName="") {
     let baseVersionedDocsPath = `versioned_docs/version-${version}`;
     // sub directory is appended to path to check for files
     let versionedDocsPath = path.join(baseVersionedDocsPath, subDirName);
@@ -97,4 +96,4 @@ async function replaceRelativePaths(filePath, assetTypes, version) {
     }
 }
 
-module.exports.main = main();
+module.exports.moveAssetFiles = moveAssetFiles;

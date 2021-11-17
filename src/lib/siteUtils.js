@@ -8,6 +8,7 @@ exports.loadSiteProperties = (siteDir) => {
     let versionJSONPath = path.join(resolvedSiteDir, "versions.json");
     let siteConfigPath = path.join(resolvedSiteDir, "siteConfig.js");
     let versionedDocsPath = path.join(resolvedSiteDir, "versioned_docs");
+    let staticFolderPath = path.join(resolvedSiteDir, "static");
     let pastVersions = [];
 
     if(fs.existsSync(versionJSONPath)) {
@@ -30,6 +31,7 @@ exports.loadSiteProperties = (siteDir) => {
     siteProps.paths.siteConfig = siteConfigPath;
     siteProps.paths.docs = docsPath;
     siteProps.paths.versionedDocs = versionedDocsPath;
+    siteProps.paths.staticFolder = staticFolderPath;
 
     siteProps.pastVersions = pastVersions;
     siteProps.siteConfig = siteConfig;
