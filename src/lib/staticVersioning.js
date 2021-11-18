@@ -1,52 +1,71 @@
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
+const util = require("util");
 
-// function main() {
-//     let args = parseArguments(process.argv.slice(2));
-//     let version = args['version'];
-//     let assetTypes = [].concat(args['assetType']);
-//     moveAssetFiles(version, assetTypes)
-//         .catch(err => console.log(err));
-//     updateVersionedDocsPaths(version, assetTypes)
-//         .catch(err => console.log(err));
-// }
+const openFile = util.promisify(fs.open);
+const appendFile = util.promisify(fs.appendFile);
+const closeFile = util.promisify(fs.close);
+const statFile = util.promisify(fs.stat);
+const truncateFile = util.promisify(fs.truncate);
+const readFile = util.promisify(fs.readFile);
+const readDir = util.promisify(fs.readdir);
+const writeFile = util.promisify(fs.writeFile);
+const unlinkFile = util.promisify(fs.unlink);
+const copyFile = util.promisify(fs.copyFile);
+const mkDir = util.promisify(fs.mkdir);
+const rmDir = util.promisify(fs.rmdir);
+const rmFile = util.promisify(fs.unlink);
 
-async function moveAssetFiles(version, assetTypes) {
-    let fileContent = await fs.readFile("versions.json", "utf8");
-    let jsonContent = JSON.parse(fileContent);
-    let objectSize =  jsonContent.length;
+async function moveAssetFiles(version, staticTypes, staticFolder) {
+    let numberOfVersions = await getNumberOfVersions();
     let excludeFromRemoval = ["next"];
 
-    for (const assetType of assetTypes) {
-        if (objectSize === 1) {
-            await copyDirectory(`static/${assetType}/`, `static/${assetType}/next`);
-            await removeFilesInDirectory(`static/${assetType}/`, excludeFromRemoval);
+    for (const staticType of staticTypes) {
+        console.info("Versioning static files...");
+        let staticTypePath = path.join(staticFolder, staticType);
+        let staticTypeNextPath = path.join(staticTypePath, "next");
+        if (numberOfVersions === 1) {
+            await copyDirectory(staticTypePath, staticTypeNextPath);
+            await removeFilesInDirectory(staticTypePath, excludeFromRemoval);
         }
-        await copyDirectory(`static/${assetType}/next`, `static/${assetType}/${version}`)
+        let staticTypeVersionPath = path.join(staticTypePath, version);
+        await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
     }
 }
 
-async function copyDirectory(from, to) {
-    await fs.mkdir(to);
+async function getNumberOfVersions() {
+    let fileContent = await readFile("versions.json", "utf8");
+    let jsonContent = JSON.parse(fileContent);
+    return jsonContent.length;
+}
 
-    const files = await fs.readdir(from, {withFileTypes: true});
+async function copyDirectory(from, to) {
+    await mkDir(to);
+
+    const files = await readDir(from, {withFileTypes: true});
     for (const file of files) {
         let relativePath = path.join(from, file.name);
         let targetPath = path.join(to, file.name);
         if (file.isDirectory() && relativePath !== to) {
             await copyDirectory(relativePath, targetPath);
         } else if(!file.isDirectory()) {
-            await fs.copyFile(relativePath, targetPath)
+            await copyFile(relativePath, targetPath)
                 .catch((err) => console.log(err + '\n' + `${relativePath} could not be copied`));
         }
     }
 }
 
 async function removeFilesInDirectory(from, exclude) {
-    const files = await fs.readdir(from, {withFileTypes: true});
+    const files = await readDir(from, {withFileTypes: true});
     for (const file of files) {
         if (!exclude.includes(file.name)) {
-            await fs.rm(path.join(from, file.name), {recursive: true});
+            let filePath = path.join(from, file.name);
+            if (file.isDirectory()) {
+                await removeFilesInDirectory(filePath, exclude)
+                await rmDir(filePath);
+            } else if(!file.isDirectory()) {
+                await rmFile(filePath);
+            }
         }
     }
 }
@@ -55,7 +74,7 @@ async function removeFilesInDirectory(from, exclude) {
   Recursive function to find all files in the current directory and
   replace the links in the file.
  */
-export async function updateVersionedDocsPaths(version, assetTypes, subDirName="") {
+async function updateVersionedDocsPaths(version, assetTypes, subDirName="") {
     let baseVersionedDocsPath = `versioned_docs/version-${version}`;
     // sub directory is appended to path to check for files
     let versionedDocsPath = path.join(baseVersionedDocsPath, subDirName);
