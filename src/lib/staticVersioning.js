@@ -1,28 +1,13 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
-const util = require("util");
 
-const openFile = util.promisify(fs.open);
-const appendFile = util.promisify(fs.appendFile);
-const closeFile = util.promisify(fs.close);
-const statFile = util.promisify(fs.stat);
-const truncateFile = util.promisify(fs.truncate);
-const readFile = util.promisify(fs.readFile);
-const readDir = util.promisify(fs.readdir);
-const writeFile = util.promisify(fs.writeFile);
-const unlinkFile = util.promisify(fs.unlink);
-const copyFile = util.promisify(fs.copyFile);
-const mkDir = util.promisify(fs.mkdir);
-const rmDir = util.promisify(fs.rmdir);
-const rmFile = util.promisify(fs.unlink);
-
-async function versionStaticAssets(version, staticAssets, staticFolder) {
+async function versionStaticAssets(staticDir, staticAssets, version) {
     let numberOfVersions = await getNumberOfVersions();
     let excludeFromRemoval = ["next"];
 
     for (const staticType of staticAssets) {
         console.info("Versioning static asset files...");
-        let staticTypePath = path.join(staticFolder, staticType);
+        let staticTypePath = path.join(staticDir, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
         if (numberOfVersions === 1) {
             await copyDirectory(staticTypePath, staticTypeNextPath);
@@ -34,38 +19,32 @@ async function versionStaticAssets(version, staticAssets, staticFolder) {
 }
 
 async function getNumberOfVersions() {
-    let fileContent = await readFile("versions.json", "utf8");
+    let fileContent = await fs.readFile("versions.json", "utf8");
     let jsonContent = JSON.parse(fileContent);
     return jsonContent.length;
 }
 
 async function copyDirectory(from, to) {
-    await mkDir(to);
+    await fs.mkdir(to);
 
-    const files = await readDir(from, {withFileTypes: true});
+    const files = await fs.readdir(from, {withFileTypes: true});
     for (const file of files) {
         let relativePath = path.join(from, file.name);
         let targetPath = path.join(to, file.name);
         if (file.isDirectory() && relativePath !== to) {
             await copyDirectory(relativePath, targetPath);
         } else if(!file.isDirectory()) {
-            await copyFile(relativePath, targetPath)
+            await fs.copyFile(relativePath, targetPath)
                 .catch((err) => console.log(err + '\n' + `${relativePath} could not be copied`));
         }
     }
 }
 
 async function removeFilesInDirectory(from, exclude) {
-    const files = await readDir(from, {withFileTypes: true});
+    const files = await fs.readdir(from, {withFileTypes: true});
     for (const file of files) {
         if (!exclude.includes(file.name)) {
-            let filePath = path.join(from, file.name);
-            if (file.isDirectory()) {
-                await removeFilesInDirectory(filePath, exclude)
-                await rmDir(filePath);
-            } else if(!file.isDirectory()) {
-                await rmFile(filePath);
-            }
+            await fs.rm(path.join(from, file.name), {recursive: true});
         }
     }
 }
@@ -116,3 +95,4 @@ async function replaceRelativePaths(filePath, assetTypes, version) {
 }
 
 module.exports.versionStaticAssets = versionStaticAssets;
+module.exports.updateVersionedDocsPaths = updateVersionedDocsPaths;
