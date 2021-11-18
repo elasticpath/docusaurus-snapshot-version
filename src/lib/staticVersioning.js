@@ -16,12 +16,12 @@ const mkDir = util.promisify(fs.mkdir);
 const rmDir = util.promisify(fs.rmdir);
 const rmFile = util.promisify(fs.unlink);
 
-async function moveAssetFiles(version, staticTypes, staticFolder) {
+async function versionStaticAssets(version, staticAssets, staticFolder) {
     let numberOfVersions = await getNumberOfVersions();
     let excludeFromRemoval = ["next"];
 
-    for (const staticType of staticTypes) {
-        console.info("Versioning static files...");
+    for (const staticType of staticAssets) {
+        console.info("Versioning static asset files...");
         let staticTypePath = path.join(staticFolder, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
         if (numberOfVersions === 1) {
@@ -115,4 +115,4 @@ async function replaceRelativePaths(filePath, assetTypes, version) {
     }
 }
 
-module.exports.moveAssetFiles = moveAssetFiles;
+module.exports.versionStaticAssets = versionStaticAssets;
