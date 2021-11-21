@@ -60,8 +60,8 @@ async function removeFilesInDirectory(from, exclude) {
 }
 
 /*
-  Recursive function to find all files in the current directory and
-  replace the links in the file.
+  Recursive function that loops through all files in the current directory and
+  subdirectories, and replaces the links in each file.
  */
 async function updateRelativePaths(basePath, staticAssets, version="") {
     // read all files from directory
