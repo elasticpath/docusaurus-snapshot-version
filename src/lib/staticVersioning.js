@@ -1,20 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-// async function versionStaticAssets(staticDir, staticAssets, version) {
-//     let numberOfVersions = await getNumberOfVersions();
-//     let excludeFromRemoval = ["next"];
-//
-//     for (const staticType of staticAssets) {
-//         console.info("Versioning static asset files...");
-//         if (numberOfVersions === 1) {
-//             await copyDirectory(`static/${staticType}/`, `static/${staticType}/next`);
-//             await removeFilesInDirectory(`static/${staticType}/`, excludeFromRemoval);
-//         }
-//         await copyDirectory(`static/${staticType}/next`, `static/${staticType}/${version}`)
-//     }
-// }
-
 async function versionStaticAssets(sitePaths, staticAssets, version) {
     let numberOfVersions = await getNumberOfVersions();
     let staticDir = sitePaths.staticFolder;
