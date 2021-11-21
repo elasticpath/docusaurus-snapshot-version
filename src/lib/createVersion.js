@@ -4,19 +4,17 @@ const diffManager = require('./diffManager');
 const siteUtils = require('./siteUtils');
 const assetCopier = require('./assetCopier');
 const linker = require('./linker');
+const staticVersioner = require('./staticVersioning')
 
-exports.create = (version, siteDir, assetType) => {
+exports.create = (version, siteDir, staticAssets) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
 	throwIfInvalidCommand(version, siteProps);
-	return createVersion(version, siteProps);
+	return createVersion(version, siteProps, staticAssets);
 }
 
 function throwIfInvalidCommand(version, siteProps) {
 	if (!fs.existsSync(siteProps.paths.versionJS)) {
 		throw new Error("version.js file is missing");
-	}
-	if (typeof version === undefined) {
-		throw new TypeError("Version not specified");
 	}
 	if (version.includes('/')) {
 		throw new TypeError("Invalid version format. (/) character is not allowed in version");
@@ -26,7 +24,7 @@ function throwIfInvalidCommand(version, siteProps) {
 	}
 }
 
-async function createVersion(version, siteProps) {
+async function createVersion(version, siteProps, staticAssets) {
 	await Promise.all([diffManager.generateFileDiff(siteProps.paths.docs), diffManager.generateSidebarDiff(siteProps.paths.siteDir)]);
 	console.info("Diff generation completed...");
 	runDocusaurusVersionCommand(version, siteProps.paths.siteDir);
@@ -35,8 +33,11 @@ async function createVersion(version, siteProps) {
 		diffManager.cleanUpFileDiff(siteProps.paths.versionedDocs, version),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version),
-		assetCopier.copyAssets(siteProps.paths.docs, version)
+		assetCopier.copyAssets(siteProps.paths.docs, version),
 	]);
+	if (staticAssets) {
+		await staticVersioner.versionStaticAssets(siteProps.paths, staticAssets, version);
+	}
 	return linker.linkAssetsInMarkdownFiles(siteProps.paths.versionedDocs, version);
 }
 
