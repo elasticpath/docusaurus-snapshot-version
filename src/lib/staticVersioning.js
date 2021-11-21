@@ -21,10 +21,10 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
 
     let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
     if (numberOfVersions === 1) {
-        await findFilesToUpdate(sitePaths.docs, staticAssets);
+        await updateRelativePaths(sitePaths.docs, staticAssets);
     }
     console.log(baseVersionedDocsPath);
-    await findFilesToUpdate(baseVersionedDocsPath, staticAssets, version);
+    await updateRelativePaths(baseVersionedDocsPath, staticAssets, version);
 }
 
 
@@ -64,14 +64,14 @@ async function removeFilesInDirectory(from, exclude) {
   Recursive function to find all files in the current directory and
   replace the links in the file.
  */
-async function findFilesToUpdate(basePath, staticAssets, version="") {
+async function updateRelativePaths(basePath, staticAssets, version="") {
     // read all files from directory
     const files = await fs.readdir(basePath, {withFileTypes: true});
     for (const file of files) {
         // if file type is a directory, a recursive call is made
         if (file.isDirectory()) {
             let subDirName = file.name;
-            await findFilesToUpdate(path.join(basePath, subDirName), staticAssets, version);
+            await updateRelativePaths(path.join(basePath, subDirName), staticAssets, version);
         } else {
             let filePath = path.join(basePath, file.name);
             await replaceRelativePaths(filePath, staticAssets, version);
