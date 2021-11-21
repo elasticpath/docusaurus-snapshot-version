@@ -90,6 +90,7 @@ async function replaceRelativePaths(filePath, staticAssets, version="") {
         let relativeLinkPattern = new RegExp(`../${staticType}/next`, 'gm');
         let replacementText = `${staticType}/${version}`;
 
+        // if versioning for the first time, replace the links in docs path and versioned docs path differently
         if (numberOfVersions === 1 && filePath.includes('/docs/')) {
             relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm')
             replacementText = `../../${staticType}/next/`;
