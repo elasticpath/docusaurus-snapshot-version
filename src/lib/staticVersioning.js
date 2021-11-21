@@ -1,19 +1,46 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-async function versionStaticAssets(staticDir, staticAssets, version) {
+// async function versionStaticAssets(staticDir, staticAssets, version) {
+//     let numberOfVersions = await getNumberOfVersions();
+//     let excludeFromRemoval = ["next"];
+//
+//     for (const staticType of staticAssets) {
+//         console.info("Versioning static asset files...");
+//         if (numberOfVersions === 1) {
+//             await copyDirectory(`static/${staticType}/`, `static/${staticType}/next`);
+//             await removeFilesInDirectory(`static/${staticType}/`, excludeFromRemoval);
+//         }
+//         await copyDirectory(`static/${staticType}/next`, `static/${staticType}/${version}`)
+//     }
+// }
+
+async function versionStaticAssets(sitePaths, staticAssets, version) {
     let numberOfVersions = await getNumberOfVersions();
+    let staticDir = sitePaths.staticFolder;
+    let versionDocsDir = sitePaths.versionedDocs;
     let excludeFromRemoval = ["next"];
 
     for (const staticType of staticAssets) {
         console.info("Versioning static asset files...");
+        let staticTypePath = path.join(staticDir, staticType);
+        let staticTypeNextPath = path.join(staticTypePath, "next");
         if (numberOfVersions === 1) {
-            await copyDirectory(`static/${staticType}/`, `static/${staticType}/next`);
-            await removeFilesInDirectory(`static/${staticType}/`, excludeFromRemoval);
+            await copyDirectory(staticTypePath, staticTypeNextPath);
+            await removeFilesInDirectory(staticTypePath, excludeFromRemoval);
         }
-        await copyDirectory(`static/${staticType}/next`, `static/${staticType}/${version}`)
+        let staticTypeVersionPath = path.join(staticTypePath, version);
+        await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
     }
+
+    let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
+    if (numberOfVersions === 1) {
+        await findFilesToUpdate(sitePaths.docs, staticAssets);
+    }
+    console.log(baseVersionedDocsPath);
+    await findFilesToUpdate(baseVersionedDocsPath, staticAssets, version);
 }
+
 
 async function getNumberOfVersions() {
     let fileContent = await fs.readFile("versions.json", "utf8");
@@ -51,62 +78,51 @@ async function removeFilesInDirectory(from, exclude) {
   Recursive function to find all files in the current directory and
   replace the links in the file.
  */
-async function updateVersionedDocsPaths(baseVersionedDocsPath, staticAssets, version) {
-    let numberOfVersions = await getNumberOfVersions();
-    baseVersionedDocsPath = path.join(baseVersionedDocsPath, `version-${version}`);
-    await findFilesToUpdate(baseVersionedDocsPath, staticAssets, version);
-
-    if (numberOfVersions === 1) {
-        baseVersionedDocsPath = "../docs";
-        await findFilesToUpdate(baseVersionedDocsPath, staticAssets);
-        // want to update path in docs directory first
-    }
-}
-
-async function findFilesToUpdate(basePath, staticAssets, version="", subDirName="") {
-    // sub directory is appended to path to check for files
-    let versionedDocsPath = path.join(basePath, subDirName);
-
+async function findFilesToUpdate(basePath, staticAssets, version="") {
     // read all files from directory
-    const files = await fs.readdir(versionedDocsPath, {withFileTypes: true});
+    const files = await fs.readdir(basePath, {withFileTypes: true});
     for (const file of files) {
         // if file type is a directory, a recursive call is made
         if (file.isDirectory()) {
             let subDirName = file.name;
-            await findFilesToUpdate(versionedDocsPath, staticAssets, version, subDirName);
+            await findFilesToUpdate(path.join(basePath, subDirName), staticAssets, version);
         } else {
-            let filePath = path.join(versionedDocsPath, file.name);
+            let filePath = path.join(basePath, file.name);
             await replaceRelativePaths(filePath, staticAssets, version);
         }
     }
 }
 
-async function replaceRelativePaths(filePath, staticAssets, version) {
+async function replaceRelativePaths(filePath, staticAssets, version="") {
     let fileContent = await fs.readFile(filePath, {encoding: "utf8", flag: "r+"});
-    // flag to check if files have been modified
+    // flag to set when files are modified
     let isFileContentModified = false;
+    let numberOfVersions = await getNumberOfVersions();
 
-    // loop through all the asset types passed in by users and replace the text
+    // loop through all the passed in static assets and replace the text
     for (const staticType of staticAssets) {
 
         let relativeLinkPattern = new RegExp(`../${staticType}/next`, 'gm');
-        let textToReplace = `${staticType}/${version}`;
-        if (!version) {
+        let replacementText = `${staticType}/${version}`;
+
+        if (numberOfVersions === 1 && filePath.includes('/docs/')) {
             relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm')
-            textToReplace = `../../${staticType}/next/`;
+            replacementText = `../../${staticType}/next/`;
+        } else if (numberOfVersions === 1 && filePath.includes('/versioned_docs/')) {
+            relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
+            replacementText = `../${staticType}/${version}/`;
         }
+
         fileContent = fileContent.replace(relativeLinkPattern, function() {
-            console.info(`replacing paths in ${filePath}...`)
             isFileContentModified = true;
-            return textToReplace;
+            return replacementText;
         });
     }
 
-    // write to file if contents have been modified
+    // if contents have been modified then write to file
     if (isFileContentModified) {
         await fs.writeFile(filePath, fileContent);
     }
 }
 
 module.exports.versionStaticAssets = versionStaticAssets;
-module.exports.updateVersionedDocsPaths = updateVersionedDocsPaths;
