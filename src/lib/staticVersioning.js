@@ -23,7 +23,6 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
     if (numberOfVersions === 1) {
         await updateRelativePaths(sitePaths.docs, staticAssets);
     }
-    console.log(baseVersionedDocsPath);
     await updateRelativePaths(baseVersionedDocsPath, staticAssets, version);
 }
 
