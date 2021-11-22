@@ -11,10 +11,12 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         console.info("Versioning static asset files...");
         let staticTypePath = path.join(staticDir, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
-        if (numberOfVersions === 1) {
-            await copyDirectory(staticTypePath, staticTypeNextPath);
-            await removeFilesInDirectory(staticTypePath, excludeFromRemoval);
-        }
+        // if a static asset is versioned for the first time, create the next directory
+        await fs.access(staticTypeNextPath)
+            .catch(async () => {
+                await copyDirectory(staticTypePath, staticTypeNextPath);
+                await removeFilesInDirectory(staticTypePath, excludeFromRemoval);
+            })
         let staticTypeVersionPath = path.join(staticTypePath, version);
         await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
     }
@@ -44,7 +46,6 @@ async function copyDirectory(from, to) {
             await copyDirectory(relativePath, targetPath);
         } else if(!file.isDirectory()) {
             await fs.copyFile(relativePath, targetPath)
-                .then(() => console.log(targetPath))
                 .catch((err) => console.log(err + '\n' + `${relativePath} could not be copied`));
         }
     }
