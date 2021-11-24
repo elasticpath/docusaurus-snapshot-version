@@ -16,9 +16,6 @@ function throwIfInvalidCommand(version, siteProps) {
 	if (!fs.existsSync(siteProps.paths.versionJS)) {
 		throw new Error("version.js file is missing");
 	}
-	if (version.includes('/')) {
-		throw new TypeError("Invalid version format. (/) character is not allowed in version");
-	}
 	if (siteProps.pastVersions.includes(version)) {
 		throw new TypeError("The specified version already exists");
 	}

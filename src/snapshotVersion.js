@@ -1,5 +1,6 @@
 const program = require('commander');
 const createVersion = require('./lib/createVersion.js');
+const fs = require("fs");
 
 module.exports = (argsParser = process.argv) => {
     program
@@ -12,6 +13,9 @@ module.exports = (argsParser = process.argv) => {
             let version = options.version;
             let siteDir = options.siteDir;
             let staticDir = options.staticDir;
+            if (version.includes('/')) {
+                throw new TypeError("Invalid version format. (/) character is not allowed in version");
+            }
             if (!staticDir) {
                 staticDir = [];
             }
