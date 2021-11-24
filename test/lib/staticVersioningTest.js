@@ -184,41 +184,4 @@ describe("staticVersioner should version static asset files and update the stati
             'index': fs.readFileSync(filePaths.index, 'utf8')
         };
     }
-
-    // function mockFileSystemAfterPartialVersion() {
-    //     mockfs({
-    //         'docs': {
-    //             'develop-configure': {
-    //                 'special.md': '../../javadocs/com/package-summary.html\n' +
-    //                     '../../img/ep-logo.png'
-    //             },
-    //             'index.md': '../javadocs/overview-summary.html'
-    //         },
-    //         'website': {
-    //             'static': {
-    //                 'img': {
-    //                     'ep-logo.png': ''
-    //                 },
-    //                 'javadocs': {
-    //                     '1.1.x': {
-    //                         'com': {
-    //                             'package-summary.html': '',
-    //                         },
-    //                         'overview-summary.html': '',
-    //                         'index.html': ''
-    //                     }
-    //                 }
-    //             },
-    //             'versioned_docs': {
-    //                 'version-1.1.x': {
-    //                     'develop-configure': {
-    //                         'special.md': '../../javadocs/com/package-summary.html\n' +
-    //                             '../../img/ep-logo.png'
-    //                     },
-    //                     'index.md': '../javadocs/overview-summary.html'
-    //                 }
-    //             }
-    //         }
-    //     })
-    // }
 })
