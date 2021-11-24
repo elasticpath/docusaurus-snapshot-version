@@ -4,7 +4,7 @@ const diffManager = require('./diffManager');
 const siteUtils = require('./siteUtils');
 const assetCopier = require('./assetCopier');
 const linker = require('./linker');
-const staticVersioner = require('./staticVersioning')
+const staticVersioner = require('./staticVersioner')
 
 exports.create = (version, siteDir, staticAssets) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
