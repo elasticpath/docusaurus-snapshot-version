@@ -28,9 +28,8 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
     await updateRelativePaths(baseVersionedDocsPath, staticAssets, version);
 }
 
-
 async function getNumberOfVersions() {
-    let fileContent = await fs.readFile("versions.json", "utf8");
+    let fileContent = await fs.readFile("./versions.json", "utf8");
     let jsonContent = JSON.parse(fileContent);
     return jsonContent.length;
 }
