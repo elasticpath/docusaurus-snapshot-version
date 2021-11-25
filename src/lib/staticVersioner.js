@@ -3,7 +3,7 @@ const path = require('path');
 
 async function versionStaticAssets(sitePaths, staticAssets, version) {
     let numberOfVersions = await getNumberOfVersions();
-    let staticDir = sitePaths.staticFolder;
+    let staticDir = sitePaths.staticDir;
     let versionDocsDir = sitePaths.versionedDocs;
     let excludeFromRemoval = ["next"];
 

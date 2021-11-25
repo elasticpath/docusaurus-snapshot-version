@@ -5,19 +5,30 @@ const siteUtils = require('./siteUtils');
 const assetCopier = require('./assetCopier');
 const linker = require('./linker');
 const staticVersioner = require('./staticVersioner')
+const path = require("path");
 
 exports.create = (version, siteDir, staticAssets) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
-	throwIfInvalidCommand(version, siteProps);
+	throwIfInvalidCommand(version, siteProps, staticAssets);
 	return createVersion(version, siteProps, staticAssets);
 }
 
-function throwIfInvalidCommand(version, siteProps) {
+function throwIfInvalidCommand(version, siteProps, staticAssets) {
 	if (!fs.existsSync(siteProps.paths.versionJS)) {
 		throw new Error("version.js file is missing");
 	}
 	if (siteProps.pastVersions.includes(version)) {
 		throw new TypeError("The specified version already exists");
+	}
+	if (staticAssets.length > 0) {
+		staticAssets.forEach(staticType => {
+			let staticTypeDirPath = path.join(siteProps.path.staticDir, staticType);
+			fs.opendir(staticTypeDirPath, err => {
+				if (err) {
+					throw new TypeError(`The ${staticType} directory does not exist under the static directory`)
+				}
+			})
+		})
 	}
 }
 
