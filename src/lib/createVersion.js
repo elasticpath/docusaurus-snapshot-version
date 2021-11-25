@@ -23,7 +23,7 @@ function throwIfInvalidCommand(version, siteProps, staticAssets) {
 	if (staticAssets.length > 0) {
 		staticAssets.forEach(staticType => {
 			let staticTypeDirPath = path.join(siteProps.path.staticDir, staticType);
-			fs.opendir(staticTypeDirPath, err => {
+			fs.access(staticTypeDirPath, err => {
 				if (err) {
 					throw new TypeError(`The ${staticType} directory does not exist under the static directory`)
 				}
@@ -41,7 +41,7 @@ async function createVersion(version, siteProps, staticAssets) {
 		diffManager.cleanUpFileDiff(siteProps.paths.versionedDocs, version),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir),
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version),
-		assetCopier.copyAssets(siteProps.paths.docs, version),
+		assetCopier.copyDocAssets(siteProps.paths.docs, version),
 	]);
 	if (staticAssets) {
 		await staticVersioner.versionStaticAssets(siteProps.paths, staticAssets, version);

@@ -21,7 +21,7 @@ describe("Copy assets for versioning", function() {
         });
 
         let docsDir = path.join(process.cwd(), "docs");
-        await assetCopier.copyAssets(docsDir, "1.2.4");
+        await assetCopier.copyDocAssets(docsDir, "1.2.4");
         let versionedAssetPath = path.join(docsDir, "assets", "version-1.2.4");
         let versionedOverviewPath = path.join(versionedAssetPath, "Overview.png");
         let versionedAPIPath = path.join(versionedAssetPath, "API");

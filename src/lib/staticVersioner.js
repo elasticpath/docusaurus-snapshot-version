@@ -5,7 +5,6 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
     let numberOfVersions = await getNumberOfVersions();
     let staticDir = sitePaths.staticDir;
     let versionDocsDir = sitePaths.versionedDocs;
-    let excludeFromRemoval = ["next"];
 
     for (const staticType of staticAssets) {
         console.info("Versioning static asset files...");
@@ -15,7 +14,7 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         await fs.access(staticTypeNextPath)
             .catch(async () => {
                 await copyDirectory(staticTypePath, staticTypeNextPath);
-                await removeFilesInDirectory(staticTypePath, excludeFromRemoval);
+                await removeFilesInDirectory(staticTypePath, "next");
             })
         let staticTypeVersionPath = path.join(staticTypePath, version);
         await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
@@ -53,7 +52,7 @@ async function copyDirectory(from, to) {
 async function removeFilesInDirectory(from, exclude) {
     const files = await fs.readdir(from, {withFileTypes: true});
     for (const file of files) {
-        if (!exclude.includes(file.name)) {
+        if (exclude !== file.name) {
             await fs.rm(path.join(from, file.name), {recursive: true});
         }
     }
