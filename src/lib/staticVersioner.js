@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 async function versionStaticAssets(sitePaths, staticAssets, version) {
-    let numberOfVersions = await getNumberOfVersions();
+    console.log(sitePaths.staticDir);
     let staticDir = sitePaths.staticDir;
     let versionDocsDir = sitePaths.versionedDocs;
 
@@ -10,27 +10,33 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         console.info("Versioning static asset files...");
         let staticTypePath = path.join(staticDir, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
-        // if a static asset is versioned for the first time, create the next directory
+
+        /*
+            If the next directory does not exist for a static asset type, then it is the first time it is versioned. The
+            catch block will create the next directory and update the relative paths in the docs and versioned_docs
+            directory.
+         */
         await fs.access(staticTypeNextPath)
             .catch(async () => {
                 await copyDirectory(staticTypePath, staticTypeNextPath);
                 await removeFilesInDirectory(staticTypePath, "next");
+
+                let relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
+                let replacementText = `../../${staticType}/next/`;
+                await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+
+                replacementText = `../${staticType}/${version}/`;
+                let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
+                await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
             })
         let staticTypeVersionPath = path.join(staticTypePath, version);
         await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
-    }
 
-    let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
-    if (numberOfVersions === 1) {
-        await updateRelativePaths(sitePaths.docs, staticAssets);
+        let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
+        let relativeLinkPattern = new RegExp(`../../${staticType}/next/`, 'gm');
+        let replacementText = `../${staticType}/${version}/`;
+        await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
     }
-    await updateRelativePaths(baseVersionedDocsPath, staticAssets, version);
-}
-
-async function getNumberOfVersions() {
-    let fileContent = await fs.readFile("./versions.json", "utf8");
-    let jsonContent = JSON.parse(fileContent);
-    return jsonContent.length;
 }
 
 async function copyDirectory(from, to) {
@@ -62,47 +68,29 @@ async function removeFilesInDirectory(from, exclude) {
   Recursive function that loops through all files in the current directory and
   subdirectories, and replaces the links in each file.
  */
-async function updateRelativePaths(basePath, staticAssets, version="") {
+async function updateRelativePaths(basePath, relativeLinkPattern, replacementText) {
     // read all files from directory
     const files = await fs.readdir(basePath, {withFileTypes: true});
     for (const file of files) {
         // if file type is a directory, a recursive call is made
         if (file.isDirectory()) {
-            let subDirName = file.name;
-            await updateRelativePaths(path.join(basePath, subDirName), staticAssets, version);
+            let subDirPath = path.join(basePath, file.name);
+            await updateRelativePaths(subDirPath, relativeLinkPattern, replacementText);
         } else {
             let filePath = path.join(basePath, file.name);
-            await replaceRelativePaths(filePath, staticAssets, version);
+            await replaceRelativePaths(filePath, relativeLinkPattern, replacementText);
         }
     }
 }
 
-async function replaceRelativePaths(filePath, staticAssets, version="") {
+async function replaceRelativePaths(filePath, relativeLinkPattern, replacementText) {
     let fileContent = await fs.readFile(filePath, {encoding: "utf8", flag: "r+"});
     // flag to set when files are modified
     let isFileContentModified = false;
-    let numberOfVersions = await getNumberOfVersions();
-
-    // loop through all the passed in static assets and replace the text
-    for (const staticType of staticAssets) {
-
-        let relativeLinkPattern = new RegExp(`../${staticType}/next`, 'gm');
-        let replacementText = `${staticType}/${version}`;
-
-        // if versioning for the first time, replace the links in the docs path and versioned docs path accordingly
-        if (numberOfVersions === 1 && filePath.includes('/docs/')) {
-            relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm')
-            replacementText = `../../${staticType}/next/`;
-        } else if (numberOfVersions === 1 && filePath.includes('/versioned_docs/')) {
-            relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
-            replacementText = `../${staticType}/${version}/`;
-        }
-
-        fileContent = fileContent.replace(relativeLinkPattern, function() {
-            isFileContentModified = true;
-            return replacementText;
-        });
-    }
+    fileContent = fileContent.replace(relativeLinkPattern, function() {
+        isFileContentModified = true;
+        return replacementText;
+    });
 
     // if contents have been modified then write to file
     if (isFileContentModified) {
