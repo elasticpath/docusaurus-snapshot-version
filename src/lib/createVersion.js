@@ -22,7 +22,7 @@ function throwIfInvalidCommand(version, siteProps, staticAssets) {
 	}
 	if (staticAssets.length > 0) {
 		staticAssets.forEach(staticType => {
-			let staticTypeDirPath = path.join(siteProps.path.staticDir, staticType);
+			let staticTypeDirPath = path.join(siteProps.paths.staticDir, staticType);
 			fs.access(staticTypeDirPath, err => {
 				if (err) {
 					throw new TypeError(`The ${staticType} directory does not exist under the static directory`)
