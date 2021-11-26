@@ -14,9 +14,15 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         /*
             If the next directory does not exist for a static asset type, then it is the first time it is versioned. The
             catch block will create the next directory and update the relative paths in the docs and versioned_docs
-            directory.
+            directory. The then block will just update the path in the version_docs directory.
          */
         await fs.access(staticTypeNextPath)
+            .then(async () => {
+                let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
+                let relativeLinkPattern = new RegExp(`../../${staticType}/next/`, 'gm');
+                let replacementText = `../${staticType}/${version}/`;
+                await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
+            })
             .catch(async () => {
                 await copyDirectory(staticTypePath, staticTypeNextPath);
                 await removeFilesInDirectory(staticTypePath, "next");
@@ -31,11 +37,6 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
             })
         let staticTypeVersionPath = path.join(staticTypePath, version);
         await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
-
-        let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
-        let relativeLinkPattern = new RegExp(`../../${staticType}/next/`, 'gm');
-        let replacementText = `../${staticType}/${version}/`;
-        await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
     }
 }
 
