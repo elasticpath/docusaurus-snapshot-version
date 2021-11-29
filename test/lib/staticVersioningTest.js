@@ -5,95 +5,163 @@ const path = require('path');
 const rewire = require("rewire");
 const staticVersioner = rewire('../../src/lib/staticVersioner');
 
+const chai = require("chai");
+const sinon = require("sinon");
+const sinonChai = require("sinon-chai");
+chai.use(sinonChai);
+
 describe("staticVersioner should version static asset files and update the static asset file paths in the docs", function() {
 
     afterEach(function() {
         mockfs.restore();
     })
 
-    it("Should return the number of versions in the versions.json file",
+    it ("Should call the functions in the catch block of fs.access and call copyDirectory after fs.access",
         async function() {
-        loadMockVersionsFile();
-        let getNumberOfVersions = staticVersioner.__get__('getNumberOfVersions');
-        let actual = await getNumberOfVersions();
-        let expectation = 1;
-        assert.strictEqual(actual, expectation);
+            mockStaticDir();
+            let siteProps = createSitePropsStub();
+
+            let copyDirectoryStub = sinon.stub();
+            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+            let removeFilesInDirectoryStub = sinon.stub();
+            staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
+            let updateRelativePathsStub = sinon.stub();
+            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+
+            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+            await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
+
+            sinon.assert.callCount(copyDirectoryStub, 2);
+            sinon.assert.callCount(removeFilesInDirectoryStub, 1);
+            sinon.assert.callCount(updateRelativePathsStub, 2);
+            sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, updateRelativePathsStub, updateRelativePathsStub, copyDirectoryStub);
+    });
+
+    it ("Should call the functions in the then block of fs.access and call copyDirectory after fs.access",
+        async function() {
+            mockStaticDirWithNextAndVersion();
+            let siteProps = createSitePropsStub();
+
+            let copyDirectoryStub = sinon.stub();
+            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+            let updateRelativePathsStub = sinon.stub();
+            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+
+            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+            await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
+
+            sinon.assert.callCount(copyDirectoryStub, 1);
+            sinon.assert.callCount(updateRelativePathsStub, 1);
+            sinon.assert.callOrder(updateRelativePathsStub, copyDirectoryStub);
+    });
+
+    it ("Should call the functions in the then block and call. Then call the functions in the catch block. Then call copyDirectory after each fs.access",
+        async function() {
+            mockStaticDirWithNextAndVersion();
+            let siteProps = createSitePropsStub();
+
+            let copyDirectoryStub = sinon.stub();
+            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+            let removeFilesInDirectoryStub = sinon.stub();
+            staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
+            let updateRelativePathsStub = sinon.stub();
+            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+
+            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+            await versionStaticAssets(siteProps.paths, ['javadocs', 'img'], '1.0.x')
+
+            sinon.assert.callCount(copyDirectoryStub, 3);
+            sinon.assert.callCount(removeFilesInDirectoryStub, 1);
+            sinon.assert.callCount(updateRelativePathsStub, 3);
+            sinon.assert.callOrder(updateRelativePathsStub, copyDirectoryStub);
     });
 
     it("Should copy everything from one directory to another directory",
         async function() {
-        mockJavaDocsDirectory();
-        let javaDocsPath = path.join(process.cwd(), 'javadocs')
-        let javaDocsNextPath = path.join(javaDocsPath, 'next')
-        let copyDirectory = staticVersioner.__get__('copyDirectory');
-        await copyDirectory(javaDocsPath, javaDocsNextPath);
-        let actual = fs.readdirSync(javaDocsNextPath);
-        console.log(actual)
-        let expectation = ["com", "index.html", "overview-summary.html"];
-        expectation.forEach(fileName => assert.include(actual, fileName))
+            mockJavaDocsDirectory();
+            let javaDocsPath = path.join(process.cwd(), 'javadocs')
+            let javaDocsNextPath = path.join(javaDocsPath, 'next')
+            let copyDirectory = staticVersioner.__get__('copyDirectory');
+            await copyDirectory(javaDocsPath, javaDocsNextPath);
+            let actual = fs.readdirSync(javaDocsNextPath);
+            console.log(actual)
+            let expectation = ["com", "index.html", "overview-summary.html"];
+            expectation.forEach(fileName => assert.include(actual, fileName))
     });
 
     it("Should remove files and subdirectories from the chosen directory except what is excluded",
         async function() {
-        mockJavaDocsDirectory();
-        let javaDocsPath = path.join(process.cwd(), 'javadocs');
-        let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
-        let toExclude = ['com', 'index.html']
-        await removeFilesInDirectory(javaDocsPath, toExclude);
-        let actual = fs.readdirSync(javaDocsPath).length;
-        toExclude.forEach(excluded => assert.notInclude(excluded, actual))
+            mockJavaDocsDirectory();
+            let javaDocsPath = path.join(process.cwd(), 'javadocs');
+            let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
+            let toExclude = ['com', 'index.html']
+            await removeFilesInDirectory(javaDocsPath, toExclude);
+            let actual = fs.readdirSync(javaDocsPath).length;
+            toExclude.forEach(excluded => assert.notInclude(excluded, actual))
     });
 
-    it("Should update the correct relative paths in the docs directory if docs is versioned for the first time",
+    it("Should call the replaceRelativePath function four times",
         async function() {
-        mockDocsDir(createOneVersion());
-        let docsPath = path.join(process.cwd(), 'docs');
-        let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
-        let staticAssets = ['img', 'javadocs'];
-        await updateRelativePaths(docsPath, staticAssets);
-
-        let actual = readDocsFiles();
-        let expectation = versionedAssetPathsWithNext();
-        assert.strictEqual(actual.special, expectation.special)
-        assert.strictEqual(actual.index, expectation.index)
+            mockFileSystem();
+            let basePath = path.join(process.cwd(), 'directory1');
+            let pattern = new RegExp('/some-pattern/');
+            let replacement = new RegExp('/some-replacement/');
+            let stub = sinon.stub();
+            staticVersioner.__set__('replaceRelativePaths', stub);
+            let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
+            await updateRelativePaths(basePath, pattern, replacement);
+            sinon.assert.callCount(stub, 4)
     });
 
-    it("Should update the correct relative paths in the versioned_docs directory if docs is versioned for the first time",
+    it("Should not call the replaceRelativePath function any number of times",
         async function() {
-        mockVersionedDocsDir(firstVersionAssetPaths());
-        let versionedDocsPath = path.join(process.cwd(), 'versioned_docs');
-        let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
-        let staticAssets = ['img', 'javadocs']
-        let version = '1.1.x'
-        await updateRelativePaths(versionedDocsPath, staticAssets, version);
-
-        let actual = readVersionedDocsFiles();
-        let expectation = versionedAssetPaths(version);
-        assert.strictEqual(actual.special, expectation.special);
-        assert.strictEqual(actual.index, expectation.index);
+            mockFileSystem();
+            let basePath = path.join(process.cwd(), 'directory2');
+            let pattern = new RegExp('/some-pattern/');
+            let replacement = new RegExp('/some-replacement/');
+            let stub = sinon.stub();
+            staticVersioner.__set__('replaceRelativePaths', stub);
+            let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
+            await updateRelativePaths(basePath, pattern, replacement);
+            sinon.assert.callCount(stub, 0)
     });
 
-    it("Should update the correct relative paths in the versioned_docs directory for subsequent versions",
-    async function() {
-        mockVersionedDocsDir(versionedAssetPathsWithNext());
-        let versionedDocsPath = path.join(process.cwd(), 'versioned_docs');
-        let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
-        let staticAssets = ['img', 'javadocs']
-        let version = '1.2.x'
-        await updateRelativePaths(versionedDocsPath, staticAssets, version);
+    it("Should only update the javadocs paths within files in the docs directory to the specified regex pattern",
+        async function() {
+            mockDocsDir(firstTimeVersioningDocsFiles());
+            let filePath = path.join(process.cwd(), 'docs', 'index.md');
+            let pattern =  new RegExp(`../javadocs/`, 'gm');
+            let replacement = `../../javadocs/next/`;
 
-        let actual = readVersionedDocsFiles();
-        let expectation = versionedAssetPaths(version);
-        assert.strictEqual(actual.special, expectation.special);
-        assert.strictEqual(actual.index, expectation.index);
+            let replaceRelativePaths = staticVersioner.__get__('replaceRelativePaths');
+            await replaceRelativePaths(filePath, pattern, replacement)
+
+            let actual = fs.readFileSync(filePath, 'utf8');
+            let expectation =
+                '../../javadocs/next/overview-summary.html\n' +
+                '../../javadocs/next/index.html\n' +
+                '../img/favicon/ep-logo-small.png'
+            assert.strictEqual(actual, expectation)
     });
 
-    function loadMockVersionsFile() {
+    function mockStaticDir() {
         mockfs({
-            'versions.json': '[\n' +
-                '  "1.0.x"\n' +
-                ']\n'
-        });
+            'static': {
+                'javadocs': {},
+            }
+        })
+    }
+
+    function mockStaticDirWithNextAndVersion() {
+        mockfs({
+            'static': {
+                'javadocs': {
+                    'next': {},
+                    '1.0.x' : {}
+                },
+                'img': {}
+            }
+        })
     }
 
     function mockJavaDocsDirectory() {
@@ -106,82 +174,47 @@ describe("staticVersioner should version static asset files and update the stati
         });
     }
 
-    function readDocsFiles() {
-        let filePaths = {
-            'special': path.join(process.cwd(), 'docs', 'develop-configure', 'special.md'),
-            'index': path.join(process.cwd(), 'docs', 'index.md')
-        }
-        return {
-            'special': fs.readFileSync(filePaths.special,'utf8'),
-            'index': fs.readFileSync(filePaths.index, 'utf8')
-        };
-    }
-
-    function createOneVersion() {
-        return '[ "1.1.x" ]'
-    }
-
-    function mockDocsDir(versions) {
+    function mockFileSystem() {
         mockfs({
-            'versions.json': versions,
-            'docs': {
-                'develop-configure': {
-                    'special.md': '../../javadocs/com/package-summary.html\n' +
-                        '../../img/ep-logo.png'
+            'directory1': {
+                'file1': '',
+                'subdirectory1': {
+                    'file2': '',
+                    'file3': '',
                 },
-                'index.md': '../javadocs/overview-summary.html'
+                'subdirectory2': {
+                    'file4': '',
+                },
+            },
+            'directory2': {}
+        })
+    }
+
+    function mockDocsDir(fileContent) {
+        mockfs({
+            'docs': {
+                'index.md': fileContent.index
             },
         })
     }
 
-    function firstVersionAssetPaths() {
+    function firstTimeVersioningDocsFiles() {
         return {
-            'special': '../../javadocs/com/package-summary.html\n' +
-                '../../img/ep-logo.png',
-            'index': '../javadocs/overview-summary.html',
-            'versions': '[ "1.1.x" ]'
-        };
-    }
-
-    function versionedAssetPathsWithNext() {
-        return {
-            'special': '../../../javadocs/next/com/package-summary.html\n' +
-                '../../../img/next/ep-logo.png',
-            'index': '../../javadocs/next/overview-summary.html',
-            'versions': '[ "1.1.x", "1.2.x" ]'
-        };
-    }
-
-    function versionedAssetPaths(version) {
-        return {
-            'special': `../../javadocs/${version}/com/package-summary.html\n` +
-                `../../img/${version}/ep-logo.png`,
-            'index': `../javadocs/${version}/overview-summary.html`,
-        };
-    }
-
-    function mockVersionedDocsDir(filesToMock) {
-        mockfs({
-            'versions.json': filesToMock.versions,
-            'versioned_docs': {
-                'version-1.1.x': {
-                    'develop-configure': {
-                        'special.md': filesToMock.special
-                    },
-                    'index.md': filesToMock.index
-                }
-            }
-        })
-    }
-
-    function readVersionedDocsFiles() {
-        let filePaths = {
-            'special': path.join(process.cwd(), 'versioned_docs', 'version-1.1.x', 'develop-configure', 'special.md'),
-            'index': path.join(process.cwd(), 'versioned_docs', 'version-1.1.x', 'index.md'),
+            'index':
+                '../javadocs/overview-summary.html\n' +
+                '../javadocs/index.html\n' +
+                '../img/favicon/ep-logo-small.png'
         }
+    }
+
+    function createSitePropsStub() {
+        let siteDir = path.resolve(".");
         return {
-            'special': fs.readFileSync(filePaths.special,'utf8'),
-            'index': fs.readFileSync(filePaths.index, 'utf8')
-        };
+            "paths": {
+                "siteDir": siteDir,
+                "versionedDocs": `${path.join(siteDir, "versioned_docs")}`,
+                "staticDir": `${path.join(siteDir, "static")}`,
+            }
+        }
     }
 })

@@ -2,12 +2,11 @@ const fs = require('fs').promises;
 const path = require('path');
 
 async function versionStaticAssets(sitePaths, staticAssets, version) {
-    console.log(sitePaths.staticDir);
     let staticDir = sitePaths.staticDir;
     let versionDocsDir = sitePaths.versionedDocs;
 
     for (const staticType of staticAssets) {
-        console.info("Versioning static asset files...");
+        console.info(`Versioning ${staticType} asset files...`);
         let staticTypePath = path.join(staticDir, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
 
