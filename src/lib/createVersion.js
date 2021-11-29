@@ -9,8 +9,6 @@ const path = require("path");
 
 exports.create = (version, siteDir, staticAssets) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
-	console.log(typeof staticAssets)
-	console.log(staticAssets)
 	throwIfInvalidCommand(version, siteProps, staticAssets);
 	return createVersion(version, siteProps, staticAssets);
 }
