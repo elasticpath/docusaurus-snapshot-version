@@ -28,7 +28,7 @@ function throwIfInvalidCommand(version, siteProps, staticAssets) {
 			let staticTypeDirPath = path.join(siteProps.paths.staticDir, staticType);
 			fs.access(staticTypeDirPath, err => {
 				if (err) {
-					throw new TypeError(`The ${staticType} directory does not exist under the static directory`)
+					throw new TypeError(`The ${staticType} directory does not exist under the static directory`);
 				}
 			})
 		})
