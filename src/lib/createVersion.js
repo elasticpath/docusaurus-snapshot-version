@@ -9,6 +9,8 @@ const path = require("path");
 
 exports.create = (version, siteDir, staticAssets) => {
 	let siteProps = siteUtils.loadSiteProperties(siteDir);
+	console.log(typeof staticAssets)
+	console.log(staticAssets)
 	throwIfInvalidCommand(version, siteProps, staticAssets);
 	return createVersion(version, siteProps, staticAssets);
 }
@@ -16,6 +18,9 @@ exports.create = (version, siteDir, staticAssets) => {
 function throwIfInvalidCommand(version, siteProps, staticAssets) {
 	if (!fs.existsSync(siteProps.paths.versionJS)) {
 		throw new Error("version.js file is missing");
+	}
+	if (version.includes('/')) {
+		throw new TypeError("Invalid version format. (/) character is not allowed in version");
 	}
 	if (siteProps.pastVersions.includes(version)) {
 		throw new TypeError("The specified version already exists");
@@ -43,7 +48,7 @@ async function createVersion(version, siteProps, staticAssets) {
 		diffManager.cleanUpSidebarDiff(siteProps.paths.siteDir, version),
 		assetCopier.copyDocAssets(siteProps.paths.docs, version),
 	]);
-	if (staticAssets) {
+	if (staticAssets.length > 0) {
 		await staticVersioner.versionStaticAssets(siteProps.paths, staticAssets, version);
 	}
 	return linker.linkAssetsInMarkdownFiles(siteProps.paths.versionedDocs, version);
