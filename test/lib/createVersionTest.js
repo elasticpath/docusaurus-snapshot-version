@@ -131,7 +131,7 @@ describe('createVersion does preliminary checks and calls diffManager',
         );
 
         it("Throws error due to the static asset version directory not existing", function() {
-            assert.throws(() => createVersion.create(undefined, SITE_DIR, ['javadocs']), TypeError);
+            assert.throws(() => createVersion.create("1.2.3", SITE_DIR, ['javadocs']), TypeError);
             assertWhenCreateVersionThrows();
         });
 

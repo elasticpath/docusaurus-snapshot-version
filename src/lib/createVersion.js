@@ -14,9 +14,11 @@ exports.create = (version, siteDir, staticAssets) => {
 }
 
 function throwIfInvalidCommand(version, siteProps, staticAssets) {
-	if (!fs.existsSync(siteProps.paths.versionJS)) {
-		throw new Error("version.js file is missing");
-	}
+	fs.access(siteProps.paths.versionJS, err => {
+		if (err) {
+			throw new Error("version.js file is missing");
+		}
+	});
 	if (version.includes('/')) {
 		throw new TypeError("Invalid version format. (/) character is not allowed in version");
 	}

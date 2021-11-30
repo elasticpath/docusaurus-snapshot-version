@@ -9,14 +9,21 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         console.info(`Versioning ${staticType} asset files...`);
         let staticTypePath = path.join(staticDir, staticType);
         let staticTypeNextPath = path.join(staticTypePath, "next");
+        let staticTypeVersionPath = path.join(staticTypePath, version);
 
         /*
-            If the next directory does not exist for a static asset type, then it is the first time it is versioned. The
-            catch block will create the next directory and update the relative paths in the docs and versioned_docs
-            directory. The then block will just update the path in the version_docs directory.
+         If the next directory does not exist for a static asset type, then it is the first time it is versioned. As a
+         result, the catch block will create the next directory and update the relative paths in the docs and
+         versioned_docs directories.
+
+         If the next directory exists for a static asset type, then the static asset type has been versioned before.
+         Therefore, the then block will just update the path in the version_docs directory.
+
+         In both cases, the next directory is copied into the provided version directory.
          */
         await fs.access(staticTypeNextPath)
             .then(async () => {
+                await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
                 let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
                 let relativeLinkPattern = new RegExp(`../../${staticType}/next/`, 'gm');
                 let replacementText = `../${staticType}/${version}/`;
@@ -25,6 +32,7 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
             .catch(async () => {
                 await copyDirectory(staticTypePath, staticTypeNextPath);
                 await removeFilesInDirectory(staticTypePath, "next");
+                await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
 
                 let relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
                 let replacementText = `../../${staticType}/next/`;
@@ -34,11 +42,14 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
                 let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
                 await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
             })
-        let staticTypeVersionPath = path.join(staticTypePath, version);
-        await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
     }
 }
 
+/*
+ Recursive function to copy a directory to another directory. If the directory to copy to
+ is in the same directory that is being copied from, this function will cause an infinite
+ loop.
+ */
 async function copyDirectory(from, to) {
     await fs.mkdir(to);
 
@@ -55,6 +66,9 @@ async function copyDirectory(from, to) {
     }
 }
 
+/*
+ Function to remove files from a directory. The name(s) specified in exclude will not be copied.
+ */
 async function removeFilesInDirectory(from, exclude) {
     const files = await fs.readdir(from, {withFileTypes: true});
     for (const file of files) {
@@ -65,8 +79,8 @@ async function removeFilesInDirectory(from, exclude) {
 }
 
 /*
-  Recursive function that loops through all files in the current directory and
-  subdirectories, and replaces the links in each file.
+ Recursive function that loops through all files in the versioned directory and subdirectories, and
+ replaces the links in each file.
  */
 async function updateRelativePaths(basePath, relativeLinkPattern, replacementText) {
     // read all files from directory
@@ -83,6 +97,9 @@ async function updateRelativePaths(basePath, relativeLinkPattern, replacementTex
     }
 }
 
+/*
+ The function replaces relative links in the file if the provided regex pattern matches.
+ */
 async function replaceRelativePaths(filePath, relativeLinkPattern, replacementText) {
     let fileContent = await fs.readFile(filePath, {encoding: "utf8", flag: "r+"});
     // flag to set when files are modified
@@ -92,7 +109,7 @@ async function replaceRelativePaths(filePath, relativeLinkPattern, replacementTe
         return replacementText;
     });
 
-    // if contents have been modified then write to file
+    // If contents have been modified, then write to file.
     if (isFileContentModified) {
         await fs.writeFile(filePath, fileContent);
     }
