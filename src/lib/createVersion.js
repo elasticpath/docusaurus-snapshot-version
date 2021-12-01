@@ -16,7 +16,7 @@ exports.create = (version, siteDir, staticAssets) => {
 function throwIfInvalidCommand(version, siteProps, staticAssets) {
 	fs.access(siteProps.paths.versionJS, err => {
 		if (err) {
-			throw new Error("version.js file is missing");
+			throw new Error("versions.js file is missing");
 		}
 	});
 	if (version.includes('/')) {

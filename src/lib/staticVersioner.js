@@ -35,14 +35,30 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
                 await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
 
                 let relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
-                let replacementText = `../../${staticType}/next/`;
-                await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+                let replacementText = `../${staticType}/next/`;
+                let numberOfVersions = await getNumberOfVersions();
+
+                if (numberOfVersions > 1) {
+                    await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+                } else {
+                    replacementText = `../../${staticType}/next/`;
+                    await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+                }
 
                 replacementText = `../${staticType}/${version}/`;
                 let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
                 await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
             })
     }
+}
+
+/*
+ The function gets the number of versions from the version.js file.
+ */
+async function getNumberOfVersions() {
+    let fileContent = await fs.readFile("./versions.json", "utf8");
+    let jsonContent = JSON.parse(fileContent);
+    return jsonContent.length;
 }
 
 /*
@@ -91,10 +107,37 @@ async function updateRelativePaths(basePath, relativeLinkPattern, replacementTex
             await updateRelativePaths(subDirPath, relativeLinkPattern, replacementText);
         } else {
             let filePath = path.join(basePath, file.name);
-            await replaceRelativePaths(filePath, relativeLinkPattern, replacementText);
+
+            let fileContent = await fs.readFile(filePath, {encoding: "utf8", flag: "r+"});
+            // Flag to mark when file paths are replaced
+            let isFileContentModified = false;
+            fileContent = fileContent.replace(relativeLinkPattern, function() {
+                isFileContentModified = true;
+                return replacementText;
+            });
+
+            // If contents have been modified, then write to file
+            if (isFileContentModified) {
+                await fs.writeFile(filePath, fileContent);
+            }
         }
     }
 }
+
+// async function updateRelativePaths(basePath, relativeLinkPattern, replacementText) {
+//     // Read all files from directory
+//     const files = await fs.readdir(basePath, {withFileTypes: true});
+//     for (const file of files) {
+//         // If file type is a directory, a recursive call is made
+//         if (file.isDirectory()) {
+//             let subDirPath = path.join(basePath, file.name);
+//             await updateRelativePaths(subDirPath, relativeLinkPattern, replacementText);
+//         } else {
+//             let filePath = path.join(basePath, file.name);
+//             await replaceRelativePaths(filePath, relativeLinkPattern, replacementText);
+//         }
+//     }
+// }
 
 /*
  The function replaces relative links in the file if the provided regex pattern matches.
