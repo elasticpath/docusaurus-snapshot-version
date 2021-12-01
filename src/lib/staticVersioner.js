@@ -40,12 +40,16 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
 
                 if (numberOfVersions > 1) {
                     await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+
+                    // Set the replacement text for versioned_docs directory
+                    replacementText = `../../${staticType}/${version}/`;
                 } else {
                     replacementText = `../../${staticType}/next/`;
                     await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
-                }
 
-                replacementText = `../${staticType}/${version}/`;
+                    // Set the replacement text for versioned_docs directory
+                    replacementText = `../${staticType}/${version}/`;
+                }
                 let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
                 await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
             })
