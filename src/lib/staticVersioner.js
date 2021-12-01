@@ -68,10 +68,10 @@ async function copyDirectory(from, to) {
 /*
  Function to remove files from a directory. The name(s) specified in exclude will not be copied.
  */
-async function removeFilesInDirectory(from, exclude) {
+async function removeFilesInDirectory(from, excludedNames) {
     const files = await fs.readdir(from, {withFileTypes: true});
     for (const file of files) {
-        if (exclude !== file.name) {
+        if (!excludedNames.includes(file.name)) {
             await fs.rm(path.join(from, file.name), {recursive: true});
         }
     }
