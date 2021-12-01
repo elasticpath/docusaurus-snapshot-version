@@ -46,9 +46,8 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
 }
 
 /*
- Recursive function to copy a directory to another directory. If the directory to copy to
- is in the same directory that is being copied from, this function will cause an infinite
- loop.
+ Recursive function to copy a directory to another directory even if the directory to copy to
+ is in the same directory that is being copied from.
  */
 async function copyDirectory(from, to) {
     await fs.mkdir(to);
@@ -83,10 +82,10 @@ async function removeFilesInDirectory(from, exclude) {
  replaces the links in each file.
  */
 async function updateRelativePaths(basePath, relativeLinkPattern, replacementText) {
-    // read all files from directory
+    // Read all files from directory
     const files = await fs.readdir(basePath, {withFileTypes: true});
     for (const file of files) {
-        // if file type is a directory, a recursive call is made
+        // If file type is a directory, a recursive call is made
         if (file.isDirectory()) {
             let subDirPath = path.join(basePath, file.name);
             await updateRelativePaths(subDirPath, relativeLinkPattern, replacementText);
@@ -102,14 +101,14 @@ async function updateRelativePaths(basePath, relativeLinkPattern, replacementTex
  */
 async function replaceRelativePaths(filePath, relativeLinkPattern, replacementText) {
     let fileContent = await fs.readFile(filePath, {encoding: "utf8", flag: "r+"});
-    // flag to set when files are modified
+    // Flag to mark when file paths are replaced
     let isFileContentModified = false;
     fileContent = fileContent.replace(relativeLinkPattern, function() {
         isFileContentModified = true;
         return replacementText;
     });
 
-    // If contents have been modified, then write to file.
+    // If contents have been modified, then write to file
     if (isFileContentModified) {
         await fs.writeFile(filePath, fileContent);
     }

@@ -4,76 +4,101 @@ const assert = require('chai').assert;
 const path = require('path');
 const rewire = require("rewire");
 const staticVersioner = rewire('../../src/lib/staticVersioner');
-
-const chai = require("chai");
 const sinon = require("sinon");
-const sinonChai = require("sinon-chai");
-chai.use(sinonChai);
 
-describe("staticVersioner should version static asset files and update the static asset file paths in the docs", function() {
+describe("staticVersioner should version static asset files and update the static asset file paths", function() {
 
     afterEach(function() {
         mockfs.restore();
     })
 
-    it ("Should call the functions in the catch block of fs.access and call copyDirectory after fs.access",
-        async function() {
-            mockStaticDir();
-            let siteProps = createSitePropsStub();
+    describe("The docs site repository with static assets is versioned for the first time", function(){
+        it ("Should call the functions in the fs.access catch block",
+            async function() {
+                mockStaticDir();
+                let siteProps = createSitePropsStub();
 
-            let copyDirectoryStub = sinon.stub();
-            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
-            let removeFilesInDirectoryStub = sinon.stub();
-            staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
-            let updateRelativePathsStub = sinon.stub();
-            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+                let copyDirectoryStub = sinon.stub();
+                staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+                let removeFilesInDirectoryStub = sinon.stub();
+                staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
+                let updateRelativePathsStub = sinon.stub();
+                staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
 
-            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
-            await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
+                const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
 
-            sinon.assert.callCount(copyDirectoryStub, 2);
-            sinon.assert.callCount(removeFilesInDirectoryStub, 1);
-            sinon.assert.callCount(updateRelativePathsStub, 2);
-            sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, updateRelativePathsStub, updateRelativePathsStub, copyDirectoryStub);
+                sinon.assert.callCount(copyDirectoryStub, 2);
+                sinon.assert.callCount(removeFilesInDirectoryStub, 1);
+                sinon.assert.callCount(updateRelativePathsStub, 2);
+                sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, copyDirectoryStub, updateRelativePathsStub, updateRelativePathsStub);
+            });
     });
 
-    it ("Should call the functions in the then block of fs.access and call copyDirectory after fs.access",
-        async function() {
-            mockStaticDirWithNextAndVersion();
-            let siteProps = createSitePropsStub();
+    describe("The docs site repository with static assets is versioned subsequently", function() {
+        it ("Should call the fs.access then block",
+            async function() {
+                mockStaticDirWithNextAndVersion();
+                let siteProps = createSitePropsStub();
 
-            let copyDirectoryStub = sinon.stub();
-            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
-            let updateRelativePathsStub = sinon.stub();
-            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+                let copyDirectoryStub = sinon.stub();
+                staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+                let updateRelativePathsStub = sinon.stub();
+                staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
 
-            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
-            await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
+                const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.1.x')
 
-            sinon.assert.callCount(copyDirectoryStub, 1);
-            sinon.assert.callCount(updateRelativePathsStub, 1);
-            sinon.assert.callOrder(updateRelativePathsStub, copyDirectoryStub);
+                sinon.assert.callCount(copyDirectoryStub, 1);
+                sinon.assert.callCount(updateRelativePathsStub, 1);
+                sinon.assert.callOrder(copyDirectoryStub, updateRelativePathsStub);
+            });
     });
 
-    it ("Should call the functions in the then block and call. Then call the functions in the catch block. Then call copyDirectory after each fs.access",
-        async function() {
-            mockStaticDirWithNextAndVersion();
-            let siteProps = createSitePropsStub();
+    describe("The first time a static asset type is versioned, but the docs site repository has already been versioned", function() {
+        it ("Should call the functions in the fs.access catch block",
+            async function() {
+                mockStaticDir();
+                let siteProps = createSitePropsStub();
 
-            let copyDirectoryStub = sinon.stub();
-            staticVersioner.__set__('copyDirectory', copyDirectoryStub);
-            let removeFilesInDirectoryStub = sinon.stub();
-            staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
-            let updateRelativePathsStub = sinon.stub();
-            staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+                let copyDirectoryStub = sinon.stub();
+                staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+                let removeFilesInDirectoryStub = sinon.stub();
+                staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
+                let updateRelativePathsStub = sinon.stub();
+                staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
 
-            const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
-            await versionStaticAssets(siteProps.paths, ['javadocs', 'img'], '1.0.x')
+                const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
 
-            sinon.assert.callCount(copyDirectoryStub, 3);
-            sinon.assert.callCount(removeFilesInDirectoryStub, 1);
-            sinon.assert.callCount(updateRelativePathsStub, 3);
-            sinon.assert.callOrder(updateRelativePathsStub, copyDirectoryStub);
+                sinon.assert.callCount(copyDirectoryStub, 2);
+                sinon.assert.callCount(removeFilesInDirectoryStub, 1);
+                sinon.assert.callCount(updateRelativePathsStub, 2);
+                sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, copyDirectoryStub, updateRelativePathsStub, updateRelativePathsStub);
+            });
+    });
+
+    describe("The docs site repository with static assets is versioned subsequently and a different static asset type is versioned for the first time",function() {
+        it ("Should call the functions in the then block and call. Then call the functions in the catch block. Then call copyDirectory after each fs.access",
+            async function() {
+                mockStaticDirWithNextAndVersion();
+                let siteProps = createSitePropsStub();
+
+                let copyDirectoryStub = sinon.stub();
+                staticVersioner.__set__('copyDirectory', copyDirectoryStub);
+                let removeFilesInDirectoryStub = sinon.stub();
+                staticVersioner.__set__('removeFilesInDirectory', removeFilesInDirectoryStub);
+                let updateRelativePathsStub = sinon.stub();
+                staticVersioner.__set__('updateRelativePaths', updateRelativePathsStub);
+
+                const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
+                await versionStaticAssets(siteProps.paths, ['javadocs', 'img'], '1.2.x')
+
+                sinon.assert.callCount(copyDirectoryStub, 3);
+                sinon.assert.callCount(removeFilesInDirectoryStub, 1);
+                sinon.assert.callCount(updateRelativePathsStub, 3);
+                sinon.assert.callOrder(updateRelativePathsStub, copyDirectoryStub);
+            });
     });
 
     it("Should copy everything from one directory to another directory",
@@ -84,7 +109,6 @@ describe("staticVersioner should version static asset files and update the stati
             let copyDirectory = staticVersioner.__get__('copyDirectory');
             await copyDirectory(javaDocsPath, javaDocsNextPath);
             let actual = fs.readdirSync(javaDocsNextPath);
-            console.log(actual)
             let expectation = ["com", "index.html", "overview-summary.html"];
             expectation.forEach(fileName => assert.include(actual, fileName))
     });
