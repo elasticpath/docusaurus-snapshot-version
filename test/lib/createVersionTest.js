@@ -16,22 +16,23 @@ const SITE_DIR = ".";
 
 describe('createVersion does preliminary checks and calls diffManager', 
     function() {
+        let accessStub;
+        let siteProps;
 
-        var siteProps;
         beforeEach(function() {
             siteProps = createSitePropsStub();
+            accessStub = sinon.stub(fs, 'access');
             sinon.stub(siteUtils, 'loadSiteProperties').returns(siteProps);
             sinon.stub(diffManager);
             sinon.stub(assetCopier);
             sinon.stub(linker);
             sinon.stub(shell);
             sinon.stub(staticVersioner);
-            sinon.stub(fs, 'existsSync').returns(true);
-            sinon.stub(fs, 'access').returns(true);
         })
 
         afterEach(function() {
             sinon.restore();
+            accessStub.restore();
         });
 
         it("Should execute the command and call diffManager and assertCopier",
@@ -110,19 +111,30 @@ describe('createVersion does preliminary checks and calls diffManager',
                 sinon.assert.calledWithExactly(linker.linkAssetsInMarkdownFiles, siteProps.paths.versionedDocs, "1.2.3");
         });
 
-        it("Throws error due to missing version.js file", function() {
-            fs.existsSync.reset();
-            assert.throws(() => createVersion.create("1.2.3", SITE_DIR, []), Error);
+        it("Should throw an error since the version.js file is missing", function() {
+            let msg = 'versions.js file is missing';
+            accessStub.yields(new Error(msg));
+            assert.throws(() => createVersion.create("1.2.3", SITE_DIR, []), Error, msg);
             assertWhenCreateVersionThrows();
         });
 
-        it("Throws error due to version that includes (/)", function() {
+        it("Should not throw an error since the versions.js file exists", function() {
+            accessStub.yields(null);
+            assert.doesNotThrow(() => createVersion.create("1.2.3", SITE_DIR, []), Error);
+        });
+
+        it("Should throw an error since the version includes (/)", function() {
             assert.throws(() => createVersion.create("1.2.3/2.4", SITE_DIR, []),
                 TypeError);
             assertWhenCreateVersionThrows();  
         });
 
-        it("Throws error due to version in argument already exists", 
+        it("Should not throw an error since the version does not include (/)", function() {
+            assert.doesNotThrow(() => createVersion.create("1.2.3", SITE_DIR, []),
+                TypeError);
+        });
+
+        it("Should throw an error since the version from the argument already exists",
             function() {
                 assert.throws(() => createVersion.create("1.1.3", SITE_DIR, []),
                     TypeError);
@@ -130,9 +142,30 @@ describe('createVersion does preliminary checks and calls diffManager',
             }
         );
 
-        it("Throws error due to the static asset version directory not existing", function() {
-            assert.throws(() => createVersion.create("1.2.3", SITE_DIR, ['javadocs']), TypeError);
+        it("Should not throw an error since the version from the argument does not exists",
+            function() {
+                assert.doesNotThrow(() => createVersion.create("1.1.1", SITE_DIR, []),
+                    TypeError);
+            }
+        );
+
+        /*
+          Two stubs need to be set for fs.access because the function that checks for validations has an fs.access at
+          the beginning of the function. When we pass null to the first stub, it means the first validation has passed,
+          allowing us to isolate the test for the other validation that uses fs.access.
+         */
+        it("Should throw an error since the static asset version directory does not exist", function() {
+            accessStub.onCall(0).yields(null);
+            let msg = 'The img directory does not exist under the static directory';
+            accessStub.onCall(1).yields(new Error(msg));
+            assert.throws(() => createVersion.create("1.2.3", SITE_DIR, ['img']), Error, msg);
             assertWhenCreateVersionThrows();
+        });
+
+        it("Should not throw an error if the file static asset directory exists", function() {
+            accessStub.onCall(0).yields(null);
+            accessStub.onCall(1).yields(null);
+            assert.doesNotThrow(() => createVersion.create("1.2.3", SITE_DIR, ['img']));
         });
 
         function assertWhenCreateVersionThrows() {
