@@ -111,7 +111,7 @@ describe('createVersion does preliminary checks and calls diffManager',
                 sinon.assert.calledWithExactly(linker.linkAssetsInMarkdownFiles, siteProps.paths.versionedDocs, "1.2.3");
         });
 
-        it("Should throw an error since the version.js file is missing", function() {
+        it("Should throw an error if the version.js file is missing", function() {
             let msg = 'versions.js file is missing';
             accessStub.yields(new Error(msg));
             assert.throws(() => createVersion.create("1.2.3", SITE_DIR, []), Error, msg);
@@ -123,7 +123,7 @@ describe('createVersion does preliminary checks and calls diffManager',
             assert.doesNotThrow(() => createVersion.create("1.2.3", SITE_DIR, []), Error);
         });
 
-        it("Should throw an error since the version includes (/)", function() {
+        it("Should throw an error if the version includes (/)", function() {
             assert.throws(() => createVersion.create("1.2.3/2.4", SITE_DIR, []),
                 TypeError);
             assertWhenCreateVersionThrows();  
@@ -134,7 +134,7 @@ describe('createVersion does preliminary checks and calls diffManager',
                 TypeError);
         });
 
-        it("Should throw an error since the version from the argument already exists",
+        it("Should throw an error if the provided version already exists",
             function() {
                 assert.throws(() => createVersion.create("1.1.3", SITE_DIR, []),
                     TypeError);
@@ -142,7 +142,7 @@ describe('createVersion does preliminary checks and calls diffManager',
             }
         );
 
-        it("Should not throw an error since the version from the argument does not exists",
+        it("Should not throw an error since the provided version does not already exists",
             function() {
                 assert.doesNotThrow(() => createVersion.create("1.1.1", SITE_DIR, []),
                     TypeError);
@@ -154,7 +154,7 @@ describe('createVersion does preliminary checks and calls diffManager',
           the beginning of the function. When we pass null to the first stub, it means the first validation has passed,
           allowing us to isolate the test for the other validation that uses fs.access.
          */
-        it("Should throw an error since the static asset version directory does not exist", function() {
+        it("Should throw an error if the static asset directory does not exist", function() {
             accessStub.onCall(0).yields(null);
             let msg = 'The img directory does not exist under the static directory';
             accessStub.onCall(1).yields(new Error(msg));
@@ -162,7 +162,7 @@ describe('createVersion does preliminary checks and calls diffManager',
             assertWhenCreateVersionThrows();
         });
 
-        it("Should not throw an error if the file static asset directory exists", function() {
+        it("Should not throw an error since the static asset directory already exists", function() {
             accessStub.onCall(0).yields(null);
             accessStub.onCall(1).yields(null);
             assert.doesNotThrow(() => createVersion.create("1.2.3", SITE_DIR, ['img']));

@@ -180,7 +180,7 @@ describe("staticVersioner should version static asset files and update the stati
             });
     });
 
-    describe("A different static asset type is versioned for the first time but the docs site repository with static assets has already been versioned",function() {
+    describe("The docs site repository with versioned static assets has unversioned static assets to version",function() {
         let siteProps = createSitePropsStub();
         const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
 
@@ -246,128 +246,183 @@ describe("staticVersioner should version static asset files and update the stati
     });
 
     describe("Test private functions", function() {
-        it("Should copy everything from one directory to another directory",
-            async function() {
-                mockJavaDocsDirectory();
-                let javaDocsPath = path.join(process.cwd(), 'javadocs')
-                let javaDocsNextPath = path.join(javaDocsPath, 'next')
-                let copyDirectory = staticVersioner.__get__('copyDirectory');
-                await copyDirectory(javaDocsPath, javaDocsNextPath);
-                let actual = fs.readdirSync(javaDocsNextPath);
-                let expectation = ["com", "index.html", "overview-summary.html"];
-                expectation.forEach(fileName => assert.include(actual, fileName))
-            });
-
-            it("Should throw error code EEXIST if the directory to copy to exists",
-            async function() {
-                mockJavaDocsDirectory();
-                let javaDocsPath = path.join(process.cwd(), 'javadocs')
-                let javaDocsNextPath = path.join(javaDocsPath, 'com')
-                let copyDirectory = staticVersioner.__get__('copyDirectory');
-                await copyDirectory(javaDocsPath, javaDocsNextPath)
-                    .catch((err) => {
-                        assert.strictEqual(err.code, 'EEXIST')
-                    })
-            });
-
-        it("Should remove everything inside the directory",
-            async function() {
-                mockJavaDocsDirectory();
-                let javaDocsPath = path.join(process.cwd(), 'javadocs');
-                let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
-                let toExclude = []
-                await removeFilesInDirectory(javaDocsPath, toExclude);
-                let actual = fs.readdirSync(javaDocsPath);
-                assert.isEmpty(actual);
-            });
-
-        it("Should not remove the specified file and/or subdirectory",
-            async function() {
-                mockJavaDocsDirectory();
-                let javaDocsPath = path.join(process.cwd(), 'javadocs');
-                let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
-                let toExclude = ['com', 'index.html']
-                await removeFilesInDirectory(javaDocsPath, toExclude);
-                let actual = fs.readdirSync(javaDocsPath);
-                toExclude.forEach(excluded => assert.include(actual, excluded))
-            });
-
-        it("Should not remove the specified file and/or subdirectory if the exclude is passed as a String",
-            async function() {
-                mockJavaDocsDirectory();
-                let javaDocsPath = path.join(process.cwd(), 'javadocs');
-                let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
-                let toExclude = "next"
-                await removeFilesInDirectory(javaDocsPath, toExclude)
-                    .catch((err) => {
-                        if (err) {
-                            console.log(err.type);
-                        }
+        describe("copyDirectory function", function() {
+            describe("The destination directory does not exist", function() {
+                it("Should copy everything from one directory to another directory",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let javaDocsPath = path.join(process.cwd(), 'javadocs')
+                        let javaDocsNextPath = path.join(javaDocsPath, 'next')
+                        let copyDirectory = staticVersioner.__get__('copyDirectory');
+                        await copyDirectory(javaDocsPath, javaDocsNextPath);
+                        let actual = fs.readdirSync(javaDocsNextPath);
+                        let expectation = ["com", "index.html", "overview-summary.html"];
+                        expectation.forEach(fileName => assert.include(actual, fileName))
                     });
             });
 
-        it("Should call the replaceRelativePath function each time it finds a file",
-            async function() {
-                mockFileSystem();
-                let basePath = path.join(process.cwd(), 'directory1');
-                let pattern = new RegExp('/some-pattern/');
-                let replacement = new RegExp('/some-replacement/');
-                let stub = sinon.stub();
-                let revert = staticVersioner.__set__('replaceRelativePaths', stub);
-                let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
-                await updateRelativePaths(basePath, pattern, replacement);
-                sinon.assert.callCount(stub, 4);
-                revert();
+            describe("The destination directory already exists", function() {
+                it("Should throw error code EEXIST if the directory to copy to exists",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let javaDocsPath = path.join(process.cwd(), 'javadocs')
+                        let javaDocsNextPath = path.join(javaDocsPath, 'com')
+                        let copyDirectory = staticVersioner.__get__('copyDirectory');
+                        await copyDirectory(javaDocsPath, javaDocsNextPath)
+                            .catch((err) => {
+                                assert.strictEqual(err.code, 'EEXIST')
+                            })
+                    });
+            })
 
+            describe("The source directory does not exists", function() {
+                it("Should throw error code EEXIST if the directory to copy to exists",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let sourcePath = path.join(process.cwd(), 'img')
+                        let destinationPath = path.join(sourcePath, 'next')
+                        let copyDirectory = staticVersioner.__get__('copyDirectory');
+                        await copyDirectory(sourcePath, destinationPath)
+                            .catch((err) => {
+                                assert.strictEqual(err.code, 'ENOENT')
+                            })
+                    });
+            })
+        });
+
+        describe("removeFilesInDirectory function", function() {
+            describe("When the exclusion paths array is empty", function() {
+                it("Should remove everything inside the directory",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let javaDocsPath = path.join(process.cwd(), 'javadocs');
+                        let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
+                        let toExclude = []
+                        await removeFilesInDirectory(javaDocsPath, toExclude);
+                        let actual = fs.readdirSync(javaDocsPath);
+                        assert.isEmpty(actual);
+                    });
             });
 
-        it("Should not call the replaceRelativePath function in an empty directory",
-            async function() {
-                mockFileSystem();
-                let basePath = path.join(process.cwd(), 'directory2');
-                let pattern = new RegExp('/some-pattern/');
-                let replacement = new RegExp('/some-replacement/');
-                let stub = sinon.stub();
-                let revert = staticVersioner.__set__('replaceRelativePaths', stub);
-                let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
-                await updateRelativePaths(basePath, pattern, replacement);
-                sinon.assert.callCount(stub, 0);
-                revert();
+            describe("When the exclusions path(s) is provided", function () {
+                it("Should not remove the files and/or subdirectories in the exclusions path if the input is an array",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let javaDocsPath = path.join(process.cwd(), 'javadocs');
+                        let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
+                        let toExclude = ['com', 'index.html']
+                        await removeFilesInDirectory(javaDocsPath, toExclude);
+                        let actual = fs.readdirSync(javaDocsPath);
+                        toExclude.forEach(excluded => assert.include(actual, excluded))
+                    });
+
+                it("Should not remove the file and/or subdirectory if the input is a String",
+                    async function() {
+                        mockJavaDocsDirectory();
+                        let javaDocsPath = path.join(process.cwd(), 'javadocs');
+                        let removeFilesInDirectory = staticVersioner.__get__('removeFilesInDirectory');
+                        let toExclude = "next"
+                        await removeFilesInDirectory(javaDocsPath, toExclude)
+                            .catch((err) => {
+                                if (err) {
+                                    console.log(err.type);
+                                }
+                            });
+                    });
+            })
+
+        })
+
+        describe("updateRelativePaths function", function() {
+            describe("When a valid path contains files", function() {
+                it("Should call the replaceRelativePath function each time it finds a file",
+                    async function() {
+                        mockFileSystem();
+                        let basePath = path.join(process.cwd(), 'directory1');
+                        let pattern = new RegExp('/some-pattern/');
+                        let replacement = new RegExp('/some-replacement/');
+                        let stub = sinon.stub();
+                        let revert = staticVersioner.__set__('replaceRelativePaths', stub);
+                        let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
+                        await updateRelativePaths(basePath, pattern, replacement);
+                        sinon.assert.callCount(stub, 4);
+                        revert();
+                    });
             });
 
-        it("Should only update file contents that match the regex pattern to the specified text",
-            async function() {
-                mockDocsDir();
-                let filePath = path.join(process.cwd(), 'docs', 'index.md');
-                let pattern =  new RegExp(`../javadocs/`, 'gm');
-                let replacement = `../../javadocs/next/`;
-
-                let replaceRelativePaths = staticVersioner.__get__('replaceRelativePaths');
-                await replaceRelativePaths(filePath, pattern, replacement)
-
-                let actual = fs.readFileSync(filePath, 'utf8');
-                let expectation =
-                    '../../javadocs/next/overview-summary.html\n' +
-                    '../../javadocs/next/index.html\n' +
-                    '../img/favicon/ep-logo-small.png'
-                assert.strictEqual(actual, expectation);
+            describe("When a valid path is empty", function() {
+                it("Should not call the replaceRelativePath function",
+                    async function() {
+                        mockFileSystem();
+                        let basePath = path.join(process.cwd(), 'directory2');
+                        let pattern = new RegExp('/some-pattern/');
+                        let replacement = new RegExp('/some-replacement/');
+                        let stub = sinon.stub();
+                        let revert = staticVersioner.__set__('replaceRelativePaths', stub);
+                        let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
+                        await updateRelativePaths(basePath, pattern, replacement);
+                        sinon.assert.callCount(stub, 0);
+                        revert();
+                    });
             });
 
-        it("Should throw error code ENOENT if the path doesn't exist",
-            async function() {
-                mockDocsDir();
-                let filePath = path.join(process.cwd(), 'docs', 'dne.md');
-                let pattern =  new RegExp(`../javadocs/`, 'gm');
-                let replacement = `../../javadocs/next/`;
-
-                let replaceRelativePaths = staticVersioner.__get__('replaceRelativePaths');
-
-                await replaceRelativePaths(filePath, pattern, replacement)
-                    .catch((err) => {
-                        assert.strictEqual(err.code, 'ENOENT')
-                    }
-                )
+            describe("When a path is invalid", function() {
+                it("Should throw error code ENOENT", async function() {
+                    mockFileSystem();
+                    let basePath = path.join(process.cwd(), 'directory3');
+                    let pattern = new RegExp('/some-pattern/');
+                    let replacement = new RegExp('/some-replacement/');
+                    let stub = sinon.stub();
+                    let revert = staticVersioner.__set__('replaceRelativePaths', stub);
+                    let updateRelativePaths = staticVersioner.__get__('updateRelativePaths');
+                    await updateRelativePaths(basePath, pattern, replacement).catch((err) => {
+                        assert.strictEqual(err.code, 'ENOENT');
+                    })
+                    revert();
+                });
             });
+
+        });
+
+        describe("replaceRelativePaths function", function() {
+            describe("When the file path exists", function () {
+                it("Should only update file contents if the contents contain the replacement regex pattern",
+                    async function() {
+                        mockDocsDir();
+                        let filePath = path.join(process.cwd(), 'docs', 'index.md');
+                        let pattern =  new RegExp(`../javadocs/`, 'gm');
+                        let replacement = `../../javadocs/next/`;
+
+                        let replaceRelativePaths = staticVersioner.__get__('replaceRelativePaths');
+                        await replaceRelativePaths(filePath, pattern, replacement);
+
+                        let actual = fs.readFileSync(filePath, 'utf8');
+                        let expectation =
+                            '../../javadocs/next/overview-summary.html\n' +
+                            '../../javadocs/next/index.html\n' +
+                            '../img/favicon/ep-logo-small.png'
+                        assert.strictEqual(actual, expectation);
+                    });
+            });
+
+            describe('When the file path does not exist', function () {
+                it("Should throw error code ENOENT",
+                    async function() {
+                        mockDocsDir();
+                        let filePath = path.join(process.cwd(), 'docs', 'dne.md');
+                        let pattern =  new RegExp(`../javadocs/`, 'gm');
+                        let replacement = `../../javadocs/next/`;
+
+                        let replaceRelativePaths = staticVersioner.__get__('replaceRelativePaths');
+
+                        await replaceRelativePaths(filePath, pattern, replacement)
+                            .catch((err) => {
+                                    assert.strictEqual(err.code, 'ENOENT')
+                                }
+                            )
+                    });
+            });
+        });
     });
 
     function createSitePropsStub() {
