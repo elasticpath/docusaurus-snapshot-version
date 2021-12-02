@@ -57,13 +57,6 @@ describe("staticVersioner should version static asset files and update the stati
                 sinon.assert.callCount(updateRelativePathsStub, 2);
             });
 
-        it ("Should call functions in order",
-            async function() {
-                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
-
-                sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, copyDirectoryStub, updateRelativePathsStub, updateRelativePathsStub);
-            });
-
         it ("Should call the updateRelativePaths function with the correct parameters",
             async function() {
                 await versionStaticAssets(siteProps.paths, ['javadocs'], '1.0.x')
@@ -111,16 +104,6 @@ describe("staticVersioner should version static asset files and update the stati
 
                 sinon.assert.callCount(copyDirectoryStub, 1);
                 sinon.assert.callCount(updateRelativePathsStub, 1);
-            });
-
-        it ("Should call copyDirectory then updateRelativePaths",
-            async function() {
-                let siteProps = createSitePropsStub();
-
-                const versionStaticAssets = staticVersioner.__get__('versionStaticAssets');
-                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.1.x')
-
-                sinon.assert.callOrder(copyDirectoryStub, updateRelativePathsStub);
             });
 
         it ("Should call the updateRelativePaths function with the correct parameters",
@@ -181,13 +164,6 @@ describe("staticVersioner should version static asset files and update the stati
                 sinon.assert.callCount(updateRelativePathsStub, 2);
             });
 
-        it ("Should call the functions in order",
-            async function() {
-                await versionStaticAssets(siteProps.paths, ['javadocs'], '1.1.x')
-
-                sinon.assert.callOrder(copyDirectoryStub, removeFilesInDirectoryStub, copyDirectoryStub, updateRelativePathsStub, updateRelativePathsStub);
-            });
-
         it ("Should call the updateRelativePaths function with the correct parameters",
             async function() {
                 await versionStaticAssets(siteProps.paths, ['javadocs'], '1.1.x')
@@ -246,21 +222,6 @@ describe("staticVersioner should version static asset files and update the stati
                 sinon.assert.callCount(copyDirectoryStub, 3);
                 sinon.assert.callCount(removeFilesInDirectoryStub, 1);
                 sinon.assert.callCount(updateRelativePathsStub, 3);
-            });
-
-        it ("Should call the functions in order",
-            async function() {
-                await versionStaticAssets(siteProps.paths, ['javadocs', 'img'], '1.1.x')
-
-                sinon.assert.callOrder(
-                    copyDirectoryStub,
-                    updateRelativePathsStub,
-                    copyDirectoryStub,
-                    removeFilesInDirectoryStub,
-                    copyDirectoryStub,
-                    updateRelativePathsStub,
-                    updateRelativePathsStub
-                    );
             });
 
         it ("Should call the updateRelativePaths functions with the correct parameters",
