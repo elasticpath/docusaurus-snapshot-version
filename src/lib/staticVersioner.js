@@ -12,14 +12,16 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
         let staticTypeVersionPath = path.join(staticTypePath, version);
 
         /*
-         If the next directory does not exist for a static asset type, then it is the first time it is versioned. As a
-         result, the catch block will create the next directory and update the relative paths in the docs and
-         versioned_docs directories.
+         If the 'next' directory exists for a static asset type, then the static asset type has been versioned before.
+         Therefore, the then block will create a new version of static assets and update the references inside the
+         versioned_docs documents.
 
-         If the next directory exists for a static asset type, then the static asset type has been versioned before.
-         Therefore, the then block will just update the path in the version_docs directory.
+         If the 'next' directory does not exist for a static asset type, it is the first time it will be versioned. As a
+         result, the catch block will create the 'next' directory and update the references inside the docs documents and
+         versioned_docs directory. The relative paths will update differently based on whether the entire docs site repo
+         has been versioned or not.
 
-         In both cases, the next directory is copied into the provided version directory.
+         In both cases, the 'next' directory is copied into the provided version directory.
          */
         await fs.access(staticTypeNextPath)
             .then(async () => {
@@ -32,24 +34,26 @@ async function versionStaticAssets(sitePaths, staticAssets, version) {
             .catch(async () => {
                 await copyDirectory(staticTypePath, staticTypeNextPath);
                 await removeFilesInDirectory(staticTypePath, "next");
-                await copyDirectory(staticTypeNextPath, staticTypeVersionPath)
+                await copyDirectory(staticTypeNextPath, staticTypeVersionPath);
 
-                let relativeLinkPattern = new RegExp(`../${staticType}/`, 'gm');
-                let replacementText = `../${staticType}/next/`;
+                let searchPattern = new RegExp(`../${staticType}/`, 'gm');
                 let numberOfVersions = await getNumberOfVersions();
 
+                // Check if the docs site repo has been versioned before
                 if (numberOfVersions > 1) {
-                    await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+                    let replacementText = `../${staticType}/next/`;
+                    await updateRelativePaths(sitePaths.docs, searchPattern, replacementText);
 
-                    // Set the relativeLinkPattern for versioned_docs directory
-                    relativeLinkPattern = new RegExp(`../../${staticType}/`, 'gm');
+                    // Set the searchPattern for versioned_docs directory
+                    searchPattern = new RegExp(`../../${staticType}/`, 'gm');
                 } else {
-                    replacementText = `../../${staticType}/next/`;
-                    await updateRelativePaths(sitePaths.docs, relativeLinkPattern, replacementText);
+                    let replacementText = `../../${staticType}/next/`;
+                    await updateRelativePaths(sitePaths.docs, searchPattern, replacementText);
                 }
-                replacementText = `../${staticType}/${version}/`;
+
+                let replacementText = `../${staticType}/${version}/`;
                 let baseVersionedDocsPath = path.join(versionDocsDir, `version-${version}`);
-                await updateRelativePaths(baseVersionedDocsPath, relativeLinkPattern, replacementText);
+                await updateRelativePaths(baseVersionedDocsPath, searchPattern, replacementText);
             })
     }
 }
