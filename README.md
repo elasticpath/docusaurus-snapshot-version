@@ -13,7 +13,6 @@ Docusaurus has a versioning feature, which is needed for any software project do
 
    > **Note**: At the moment, this tool is not published to npm registry. We can add a git repository as a dependency.
 
-
 2. Run the following command to create a new version from "next release" docs.
 
     ```sh
@@ -59,7 +58,6 @@ Site-specific static asset files are in the `website/static/` directory, and sta
 
 - If a static directory is versioned for the first time, everything in the static directory is copied into the `<version-number>` and the `next` (for next release) directories. These new directories are under the same static directory.
 - If a static directory has been versioned before, everything in the `next` directory is copied into the `<new-version-number>` directory.
-
 
 e.g. Once `website/static/img` directory is versioned, files from that directory are in the following directories:
 - `website/static/img/next`
