@@ -59,10 +59,11 @@ Site-specific static asset files are in the `website/static/` directory, and sta
 - If a static directory is versioned for the first time, everything in the static directory is copied into the `<version-number>` and the `next` (for next release) directories. These new directories are under the same static directory.
 - If a static directory has been versioned before, everything in the `next` directory is copied into the `<new-version-number>` directory.
 
-e.g. Once `website/static/img` directory is versioned, files from that directory are in the following directories:
-- `website/static/img/next`
-- `website/static/img/<version-number>`
-   > Any subsequent versioning will copy files from "next" release (`website/static/img/next`) into the new release (`website/static/img/<new-version-number>`)
+e.g. Once `website/static/javadocs` directory is versioned, files from that directory are in the following directories:
+- `website/static/javadocs/next`
+- `website/static/javadocs/<version-number>`
+
+   > Any subsequent versioning will copy files from "next" release (`website/static/javadocs/next`) into the new release (`website/static/javadocs/<new-version-number>`)
 
 When you execute the `docusaurus-snapshot-version` command, the following steps are performed:
 
