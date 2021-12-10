@@ -23,5 +23,10 @@
 		"glob": "^7.1.6",
 		"shelljs": "^0.8.4"
 	},
-	"license": "GPL-3.0"
+	"license": "GPL-3.0",
+  "engines": {
+    "node": ">=14.17",
+    "npm": "please use yarn",
+    "yarn": "^1"
+  }
 }
